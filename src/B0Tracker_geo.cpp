@@ -32,32 +32,32 @@ using namespace dd4hep;
 using namespace dd4hep::rec;
 
 namespace {
-  struct ModuleComponentDef {
-    std::string name;
-    std::string material;
-    std::string vis;
-    double dx{0.0};
-    double dy{0.0};
-    double dz{0.0};
-    double px{0.0};
-    double py{0.0};
-    double pz{0.0};
-    bool sensitive{false};
-    double inner{0.0};
-    double outer{0.0};
-  };
-}
+struct ModuleComponentDef {
+  std::string name;
+  std::string material;
+  std::string vis;
+  double dx{0.0};
+  double dy{0.0};
+  double dz{0.0};
+  double px{0.0};
+  double py{0.0};
+  double pz{0.0};
+  bool sensitive{false};
+  double inner{0.0};
+  double outer{0.0};
+};
+} // namespace
 
 static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector sens) {
-  xml_det_t x_det = e;
-  const int det_id = x_det.id();
+  xml_det_t x_det            = e;
+  const int det_id           = x_det.id();
   const std::string det_name = x_det.nameStr();
 
   DetElement sdet(det_name, det_id);
   Assembly assembly(det_name);
 
   // Mother volume and top transform
-  Volume motherVol = description.pickMotherVolume(sdet);
+  Volume motherVol   = description.pickMotherVolume(sdet);
   xml::Component pos = x_det.position();
   xml::Component rot = x_det.rotation();
   Transform3D posAndRot(RotationZYX(rot.z(), rot.y(), rot.x()),
@@ -102,30 +102,30 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
   for (xml_coll_t comp(trackingUnit, _U(module_component)); comp; ++comp) {
     xml_comp_t xc = comp;
-    xml_h x_box = xc.child(_U(box));
+    xml_h x_box   = xc.child(_U(box));
 
     const double dx = x_box.attr<double>(_Unicode(x));
     const double dy = x_box.attr<double>(_Unicode(y));
     const double dz = x_box.attr<double>(_Unicode(z));
 
     xml::Component cpos = xc.position();
-    const double px = cpos.x();
-    const double py = cpos.y();
-    const double pz = cpos.z();
+    const double px     = cpos.x();
+    const double py     = cpos.y();
+    const double pz     = cpos.z();
 
     zMin = std::min(zMin, pz - dz / 2.0);
     zMax = std::max(zMax, pz + dz / 2.0);
 
     ModuleComponentDef cdef;
-    cdef.name = xc.nameStr();
-    cdef.material = xc.attr<std::string>(_Unicode(material));
-    cdef.vis = xc.hasAttr(_Unicode(vis)) ? xc.attr<std::string>(_Unicode(vis)) : "";
-    cdef.dx = dx;
-    cdef.dy = dy;
-    cdef.dz = dz;
-    cdef.px = px;
-    cdef.py = py;
-    cdef.pz = pz;
+    cdef.name      = xc.nameStr();
+    cdef.material  = xc.attr<std::string>(_Unicode(material));
+    cdef.vis       = xc.hasAttr(_Unicode(vis)) ? xc.attr<std::string>(_Unicode(vis)) : "";
+    cdef.dx        = dx;
+    cdef.dy        = dy;
+    cdef.dz        = dz;
+    cdef.px        = px;
+    cdef.py        = py;
+    cdef.pz        = pz;
     cdef.sensitive = xc.hasAttr(_Unicode(sensitive)) && xc.attr<bool>(_Unicode(sensitive));
 
     moduleComponents.push_back(cdef);
@@ -158,8 +158,8 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   Volume supportVol("B0SupportDiskVol", supportSolid, supportMat);
 
   const double moduleOffset = description.constant<double>("ModuleOffsetFromSupport");
-  const double frontZ = +moduleOffset;
-  const double backZ  = -moduleOffset;
+  const double frontZ       = +moduleOffset;
+  const double backZ        = -moduleOffset;
 
   // ------------------------------------------------------------------
   // Layers
@@ -168,7 +168,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
   for (xml_coll_t layer(x_det, _U(layer)); layer; ++layer) {
     xml_comp_t x_layer = layer;
-    const int layerID = x_layer.id();
+    const int layerID  = x_layer.id();
 
     // --------------------------------------------------------------
     // Read layer envelope like in the working original
@@ -206,8 +206,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     // Place the layer in the detector assembly using its <position>
     xml_comp_t lp = x_layer.child(_U(position));
     Transform3D layerTr(Rotation3D(),
-                        Position(lp.attr<double>(_Unicode(x)),
-                                 lp.attr<double>(_Unicode(y)),
+                        Position(lp.attr<double>(_Unicode(x)), lp.attr<double>(_Unicode(y)),
                                  lp.attr<double>(_Unicode(z))));
 
     PlacedVolume layer_pv = assembly.placeVolume(layer_vol, layerTr);
@@ -233,8 +232,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       if (xc.hasAttr(_Unicode(ref)) && xc.attr<std::string>(_Unicode(ref)) == "B0SupportDisk") {
         xml_comp_t sp = xc.child(_U(position));
         Transform3D tr(Rotation3D(),
-                       Position(sp.attr<double>(_Unicode(x)),
-                                sp.attr<double>(_Unicode(y)),
+                       Position(sp.attr<double>(_Unicode(x)), sp.attr<double>(_Unicode(y)),
                                 sp.attr<double>(_Unicode(z))));
         PlacedVolume spv = layer_vol.placeVolume(supportVol, tr);
         spv.addPhysVolID("layer", layerID);
@@ -261,11 +259,11 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     for (xml_coll_t mp(mpos, _U(module)); mp; ++mp, ++moduleIndexInLayer, ++globalModuleID) {
       xml_comp_t xm = mp;
 
-      const double modX = xm.attr<double>(_Unicode(posX));
-      const double modY = xm.attr<double>(_Unicode(posY));
-      const double modRotZ = xm.attr<double>(_Unicode(rotZ));
+      const double modX      = xm.attr<double>(_Unicode(posX));
+      const double modY      = xm.attr<double>(_Unicode(posY));
+      const double modRotZ   = xm.attr<double>(_Unicode(rotZ));
       const std::string side = xm.attr<std::string>(_Unicode(side));
-      const double modZ = (side == "front" ? frontZ : backZ);
+      const double modZ      = (side == "front" ? frontZ : backZ);
 
       // Keep your required front/back rotation convention
       RotationZYX rotLocal(modRotZ, 0.0, (side == "back" ? M_PI : 0.0));
@@ -289,16 +287,14 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
         Transform3D compTr = modTr * compLocalTr;
 
         PlacedVolume comp_pv = layer_vol.placeVolume(c_vol, compTr);
-        comp_pv.addPhysVolID("layer", layerID)
-               .addPhysVolID("module", globalModuleID);
+        comp_pv.addPhysVolID("layer", layerID).addPhysVolID("module", globalModuleID);
 
         if (cdef.sensitive) {
           comp_pv.addPhysVolID("sensor", sensorIndexInModule);
 
-          std::string sensorName =
-              _toString(layerID, "layer%d") +
-              _toString(globalModuleID, "_module%d") +
-              _toString(sensorIndexInModule, "_sensor%d");
+          std::string sensorName = _toString(layerID, "layer%d") +
+                                   _toString(globalModuleID, "_module%d") +
+                                   _toString(sensorIndexInModule, "_sensor%d");
 
           DetElement sensorDE(layerDE, sensorName, globalModuleID * 10 + sensorIndexInModule);
           sensorDE.setPlacement(comp_pv);
@@ -333,9 +329,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       printout(INFO, det_name,
                "Layer %d envelope: length=%8.3f mm zstart=%8.3f mm "
                "tol(rmin,rmax,zmin,zmax)=(%6.3f,%6.3f,%6.3f,%6.3f) mm",
-               layerID,
-               env_length / mm, env_zstart / mm,
-               env_rmin_tol / mm, env_rmax_tol / mm,
+               layerID, env_length / mm, env_zstart / mm, env_rmin_tol / mm, env_rmax_tol / mm,
                env_zmin_tol / mm, env_zmax_tol / mm);
     }
   }
