@@ -303,7 +303,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
           auto& sensorParams =
               DD4hepDetectorHelper::ensureExtension<dd4hep::rec::VariantParameters>(sensorDE);
-          sensorParams.set<std::string>("axis_definitions", "XZY");
+          sensorParams.set<std::string>("axis_definitions", "XYZ");
 
           Vector3D u(-1., 0., 0.);
           Vector3D v(0., -1., 0.);
