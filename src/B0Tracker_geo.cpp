@@ -288,8 +288,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
         Transform3D tr(Rotation3D(),
                        Position(sp.attr<double>(_Unicode(x)), sp.attr<double>(_Unicode(y)),
                                 sp.attr<double>(_Unicode(z))));
-        PlacedVolume spv = layer_vol.placeVolume(supportVol, tr);
-        spv.addPhysVolID("layer", layerID);
+        layer_vol.placeVolume(supportVol, tr);
       }
     }
 
@@ -331,7 +330,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
       // Place the single shared TrackingUnit Assembly into the layer
       PlacedVolume mod_pv = layer_vol.placeVolume(m_vol, modTr);
-      mod_pv.addPhysVolID("layer", layerID).addPhysVolID("module", globalModuleID);
+      mod_pv.addPhysVolID("module", globalModuleID);
 
       // Module DetElement, anchored to the module placement
       std::string m_base = _toString(layerID, "layer%d") + _toString(globalModuleID, "_module%d");
