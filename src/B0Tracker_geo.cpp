@@ -3,14 +3,13 @@
 //
 // B0 Tracker - ACTS/DDRec-friendly builder
 //
-// Flattened per-layer placement version:
-//   - Keep top detector Assembly and per-layer Assembly
-//   - Do NOT build a TrackingUnit Assembly
-//   - For each layer and module position, place each module component
-//     directly into the layer assembly as a basic solid
-//   - Sensitive components get direct sensor DetElements under the layer
-//   - Read layer <envelope> and propagate envelope_* parameters like the
-//     original working B0 implementation
+// Canonical layer -> module -> sensor hierarchy:
+//   - TrackingUnit module Assembly is built ONCE and reused via
+//     placeVolume for every (layer, module-position) entry
+//   - Module DetElement is anchored to the module Assembly's placement
+//     into the layer (not to a child component)
+//   - Sensor DetElements sit under the module DetElement
+//   - Layer envelope tolerances read from <envelope> and propagated
 
 #include "DD4hep/DetFactoryHelper.h"
 #include "DD4hep/Printout.h"
@@ -49,6 +48,8 @@ struct ModuleComponentDef {
 } // namespace
 
 static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector sens) {
+  using Placements = std::vector<PlacedVolume>;
+
   xml_det_t x_det            = e;
   const int det_id           = x_det.id();
   const std::string det_name = x_det.nameStr();
@@ -80,7 +81,9 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   sens.setType("tracker");
 
   // ------------------------------------------------------------------
-  // Read TrackingUnit component definitions ONCE, but do not build an assembly
+  // Read TrackingUnit component definitions from the compact file.
+  // TrackingUnit is declared at file scope (shared across all 4 layers),
+  // not as a child of <detector>, so we walk the document root.
   // ------------------------------------------------------------------
   xml_h root = x_det.document().root();
   xml_h trackingUnit;
@@ -135,7 +138,8 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     throw std::runtime_error("FATAL: failed to compute TrackingUnit z-extent (zMin/zMax invalid)");
   }
 
-  // Assign per-sensitive surface thicknesses
+  // Per-sensor surface inner/outer thickness for the ACTS measurement plane.
+  // Half the 0.3 mm sensor thickness on each side of the plane
   for (auto& cdef : moduleComponents) {
     if (!cdef.sensitive) {
       continue;
@@ -145,7 +149,57 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   }
 
   // ------------------------------------------------------------------
-  // Support disk volume
+  // Build the TrackingUnit module Assembly ONCE; collect its sensitive
+  // PlacedVolumes and ACTS VolPlane measurement surfaces for reuse on
+  // every per-(layer, module-position) placement
+  // ------------------------------------------------------------------
+  std::map<std::string, Assembly> modules;
+  std::map<std::string, Placements> sensitives;
+  std::map<std::string, std::vector<VolPlane>> volplane_surfaces;
+
+  {
+    const std::string m_nam = "TrackingUnit";
+    Assembly moduleAsm(m_nam);
+    if (xml_comp_t(trackingUnit).hasAttr(_Unicode(vis))) {
+      moduleAsm.setVisAttributes(description.visAttributes(xml_comp_t(trackingUnit).visStr()));
+    }
+
+    int sensorIndex = 1;
+    for (const auto& cdef : moduleComponents) {
+      Material mat = description.material(cdef.material);
+      Box shape(cdef.dx / 2.0, cdef.dy / 2.0, cdef.dz / 2.0);
+      Volume c_vol(cdef.name, shape, mat);
+
+      if (!cdef.vis.empty()) {
+        c_vol.setVisAttributes(description.visAttributes(cdef.vis));
+      }
+      if (cdef.sensitive) {
+        c_vol.setSensitiveDetector(sens);
+      }
+
+      PlacedVolume comp_pv = moduleAsm.placeVolume(c_vol, Position(cdef.px, cdef.py, cdef.pz));
+
+      if (cdef.sensitive) {
+        comp_pv.addPhysVolID("sensor", sensorIndex);
+        sensitives[m_nam].push_back(comp_pv);
+
+        // Sensor lies flat in the xy plane → surface normal along +z.
+        Vector3D u(-1.0, 0.0, 0.0);
+        Vector3D v(0.0, -1.0, 0.0);
+        Vector3D n(0.0, 0.0, 1.0);
+        SurfaceType type(SurfaceType::Sensitive);
+        VolPlane surf(c_vol, type, cdef.inner, cdef.outer, u, v, n);
+        volplane_surfaces[m_nam].push_back(surf);
+
+        ++sensorIndex;
+      }
+    }
+
+    modules[m_nam] = moduleAsm;
+  }
+
+  // ------------------------------------------------------------------
+  // Support disk volume (B0SupportDisk) — built once, placed per layer.
   // ------------------------------------------------------------------
   const double rmin  = description.constant<double>("SupportRMin");
   const double rmax  = description.constant<double>("SupportRMax");
@@ -240,7 +294,8 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     }
 
     // --------------------------------------------------------------
-    // Place every module component directly while looping over modules
+    // Place the shared TrackingUnit Assembly at each <module_positions>
+    // entry; wire up module and sensor DetElements.
     // --------------------------------------------------------------
     xml_comp_t mpos = x_layer.child("module_positions");
     if (!mpos.ptr()) {
@@ -254,6 +309,11 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       layerParams.set<double>("envelope_z_max", env_zmax_tol / dd4hep::mm);
       continue;
     }
+
+    const std::string m_nam = "TrackingUnit";
+    Volume m_vol            = modules[m_nam];
+    Placements& sensVols    = sensitives[m_nam];
+    auto& sensSurfs         = volplane_surfaces[m_nam];
 
     int moduleIndexInLayer = 1;
     for (xml_coll_t mp(mpos, _U(module)); mp; ++mp, ++moduleIndexInLayer, ++globalModuleID) {
@@ -269,49 +329,26 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       RotationZYX rotLocal(modRotZ, 0.0, (side == "back" ? M_PI : 0.0));
       Transform3D modTr(rotLocal, Position(modX, modY, modZ));
 
-      int sensorIndexInModule = 1;
+      // Place the single shared TrackingUnit Assembly into the layer
+      PlacedVolume mod_pv = layer_vol.placeVolume(m_vol, modTr);
+      mod_pv.addPhysVolID("layer", layerID).addPhysVolID("module", globalModuleID);
 
-      for (const auto& cdef : moduleComponents) {
-        Material mat = description.material(cdef.material);
-        Box shape(cdef.dx / 2.0, cdef.dy / 2.0, cdef.dz / 2.0);
-        Volume c_vol(cdef.name, shape, mat);
+      // Module DetElement, anchored to the module placement
+      std::string m_base = _toString(layerID, "layer%d") + _toString(globalModuleID, "_module%d");
+      DetElement modDE(layerDE, m_base + "_pos", globalModuleID);
+      modDE.setPlacement(mod_pv);
 
-        if (!cdef.vis.empty()) {
-          c_vol.setVisAttributes(description.visAttributes(cdef.vis));
-        }
-        if (cdef.sensitive) {
-          c_vol.setSensitiveDetector(sens);
-        }
+      // Sensor DetElements as children of modDE.
+      for (size_t ic = 0; ic < sensVols.size(); ++ic) {
+        PlacedVolume sens_pv = sensVols[ic];
+        DetElement comp_de(modDE, std::string("de_") + sens_pv.volume().name(), globalModuleID);
+        comp_de.setPlacement(sens_pv);
 
-        Transform3D compLocalTr(Rotation3D(), Position(cdef.px, cdef.py, cdef.pz));
-        Transform3D compTr = modTr * compLocalTr;
+        auto& comp_de_params =
+            DD4hepDetectorHelper::ensureExtension<dd4hep::rec::VariantParameters>(comp_de);
+        comp_de_params.set<std::string>("axis_definitions", "XYZ");
 
-        PlacedVolume comp_pv = layer_vol.placeVolume(c_vol, compTr);
-        comp_pv.addPhysVolID("layer", layerID).addPhysVolID("module", globalModuleID);
-
-        if (cdef.sensitive) {
-          comp_pv.addPhysVolID("sensor", sensorIndexInModule);
-
-          std::string sensorName = _toString(layerID, "layer%d") +
-                                   _toString(globalModuleID, "_module%d") +
-                                   _toString(sensorIndexInModule, "_sensor%d");
-
-          DetElement sensorDE(layerDE, sensorName, globalModuleID * 10 + sensorIndexInModule);
-          sensorDE.setPlacement(comp_pv);
-
-          auto& sensorParams =
-              DD4hepDetectorHelper::ensureExtension<dd4hep::rec::VariantParameters>(sensorDE);
-          sensorParams.set<std::string>("axis_definitions", "XYZ");
-
-          Vector3D u(-1., 0., 0.);
-          Vector3D v(0., -1., 0.);
-          Vector3D n(0., 0., 1.);
-          SurfaceType type(SurfaceType::Sensitive);
-          VolPlane surf(c_vol, type, cdef.inner, cdef.outer, u, v, n);
-          volSurfaceList(sensorDE)->push_back(surf);
-
-          ++sensorIndexInModule;
-        }
+        volSurfaceList(comp_de)->push_back(sensSurfs[ic]);
       }
     }
 
