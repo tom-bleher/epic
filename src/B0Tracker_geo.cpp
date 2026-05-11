@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // B0 Tracker - ACTS/DDRec-friendly builder
 //
-// Flattened per-layer placement version:
+// Flattened per-layer placement version with restored module DetElement:
 //   - Keep top detector Assembly and per-layer Assembly
 //   - Do NOT build a TrackingUnit Assembly
 //   - For each layer and module position, place each module component
 //     directly into the layer assembly as a basic solid
-//   - Sensitive components get direct sensor DetElements under the layer
+//   - Module DetElement created per module (required by ACTS hierarchy)
+//   - Sensor DetElements sit under module DetElement (layer -> module -> sensor)
 //   - Read layer <envelope> and propagate envelope_* parameters like the
 //     original working B0 implementation
 
@@ -115,9 +116,9 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     zMax = std::max(zMax, pz + dz / 2.0);
 
     ModuleComponentDef cdef;
-    cdef.name = xc.nameStr();
-    cdef.material = xc.attr<std::string>(_Unicode(material));
-    cdef.vis = xc.hasAttr(_Unicode(vis)) ? xc.attr<std::string>(_Unicode(vis)) : "";
+    cdef.name      = xc.nameStr();
+    cdef.material  = xc.attr<std::string>(_Unicode(material));
+    cdef.vis       = xc.hasAttr(_Unicode(vis)) ? xc.attr<std::string>(_Unicode(vis)) : "";
     cdef.dx = dx;
     cdef.dy = dy;
     cdef.dz = dz;
@@ -135,9 +136,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
   // Assign per-sensitive surface thicknesses
   for (auto& cdef : moduleComponents) {
-    if (!cdef.sensitive) {
-      continue;
-    }
+    if (!cdef.sensitive) continue;
     cdef.inner = 0.15 * mm;
     cdef.outer = 0.15 * mm;
   }
@@ -166,11 +165,9 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
   for (xml_coll_t layer(x_det, _U(layer)); layer; ++layer) {
     xml_comp_t x_layer = layer;
-    const int layerID = x_layer.id();
+    const int layerID  = x_layer.id();
 
-    // --------------------------------------------------------------
-    // Read layer envelope like in the working original
-    // --------------------------------------------------------------
+    // Read layer envelope metadata (same as original working builder)
     xml_comp_t x_env = x_layer.child(_U(envelope), false);
 
     double env_rmin_tol = 0.0;
@@ -188,18 +185,15 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       env_zmax_tol = getAttrOrDefault<double>(x_env, _Unicode(zmax_tolerance), 0.0);
       env_length   = getAttrOrDefault<double>(x_env, _Unicode(length), 0.0);
       env_zstart   = getAttrOrDefault<double>(x_env, _Unicode(zstart), 0.0);
-
-      if (x_env.hasAttr(_Unicode(vis))) {
+      if (x_env.hasAttr(_Unicode(vis)))
         env_vis = x_env.attr<std::string>(_Unicode(vis));
-      }
     }
 
     std::string layer_name = det_name + std::string("_layer") + std::to_string(layerID);
     Assembly layer_vol(layer_name);
 
-    if (!env_vis.empty()) {
+    if (!env_vis.empty())
       layer_vol.setVisAttributes(description.visAttributes(env_vis));
-    }
 
     // Place the layer in the detector assembly using its <position>
     xml_comp_t lp = x_layer.child(_U(position));
@@ -223,9 +217,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
                                                       "layer_material");
     }
 
-    // --------------------------------------------------------------
-    // Support disks go directly into the layer
-    // --------------------------------------------------------------
+    // Support disks placed directly into the layer
     for (xml_coll_t comp(x_layer, _U(component)); comp; ++comp) {
       xml_comp_t xc = comp;
       if (xc.hasAttr(_Unicode(ref)) && xc.attr<std::string>(_Unicode(ref)) == "B0SupportDisk") {
@@ -239,14 +231,10 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       }
     }
 
-    // --------------------------------------------------------------
-    // Place every module component directly while looping over modules
-    // --------------------------------------------------------------
+    // Module positions
     xml_comp_t mpos = x_layer.child("module_positions");
     if (!mpos.ptr()) {
       printout(WARNING, det_name, "Layer %d has no <module_positions> - skipping modules", layerID);
-
-      // Even if no modules, still propagate envelope metadata
       layer_vol->GetShape()->ComputeBBox();
       layerParams.set<double>("envelope_r_min", env_rmin_tol / dd4hep::mm);
       layerParams.set<double>("envelope_r_max", env_rmax_tol / dd4hep::mm);
@@ -259,46 +247,60 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     for (xml_coll_t mp(mpos, _U(module)); mp; ++mp, ++moduleIndexInLayer, ++globalModuleID) {
       xml_comp_t xm = mp;
 
-      const double modX = xm.attr<double>(_Unicode(posX));
-      const double modY = xm.attr<double>(_Unicode(posY));
+      const double modX    = xm.attr<double>(_Unicode(posX));
+      const double modY    = xm.attr<double>(_Unicode(posY));
       const double modRotZ = xm.attr<double>(_Unicode(rotZ));
       const std::string side = xm.attr<std::string>(_Unicode(side));
-      const double modZ = (side == "front" ? frontZ : backZ);
+      const double modZ    = (side == "front" ? frontZ : backZ);
 
-      // Keep your required front/back rotation convention
       RotationZYX rotLocal(modRotZ, 0.0, (side == "back" ? M_PI : 0.0));
       Transform3D modTr(rotLocal, Position(modX, modY, modZ));
 
+      // ----------------------------------------------------------------
+      // Module DetElement — required by ACTS.
+      // ACTS expects the hierarchy: layer -> module -> sensor.
+      // We anchor the module DetElement to the first component placement.
+      // ----------------------------------------------------------------
+      std::string m_base = _toString(layerID, "layer%d") + _toString(globalModuleID, "_module%d");
+      DetElement moduleDE(layerDE, m_base + "_pos", globalModuleID);
+
+      bool moduleDEPlacementSet = false;
       int sensorIndexInModule = 1;
 
       for (const auto& cdef : moduleComponents) {
+        // Unique volume name per component per module instance
+        std::string cname = cdef.name
+                          + "_L" + std::to_string(layerID)
+                          + "_M" + std::to_string(globalModuleID);
+
         Material mat = description.material(cdef.material);
         Box shape(cdef.dx / 2.0, cdef.dy / 2.0, cdef.dz / 2.0);
-        Volume c_vol(cdef.name, shape, mat);
+        Volume c_vol(cname, shape, mat);
 
-        if (!cdef.vis.empty()) {
+        if (!cdef.vis.empty())
           c_vol.setVisAttributes(description.visAttributes(cdef.vis));
-        }
-        if (cdef.sensitive) {
+        if (cdef.sensitive)
           c_vol.setSensitiveDetector(sens);
-        }
 
+        // Combined transform: module placement * component local offset
         Transform3D compLocalTr(Rotation3D(), Position(cdef.px, cdef.py, cdef.pz));
         Transform3D compTr = modTr * compLocalTr;
 
         PlacedVolume comp_pv = layer_vol.placeVolume(c_vol, compTr);
-        comp_pv.addPhysVolID("layer", layerID)
+        comp_pv.addPhysVolID("layer",  layerID)
                .addPhysVolID("module", globalModuleID);
+
+        // Anchor the module DetElement to the first component placement
+        if (!moduleDEPlacementSet) {
+          moduleDE.setPlacement(comp_pv);
+          moduleDEPlacementSet = true;
+        }
 
         if (cdef.sensitive) {
           comp_pv.addPhysVolID("sensor", sensorIndexInModule);
 
-          std::string sensorName =
-              _toString(layerID, "layer%d") +
-              _toString(globalModuleID, "_module%d") +
-              _toString(sensorIndexInModule, "_sensor%d");
-
-          DetElement sensorDE(layerDE, sensorName, globalModuleID * 10 + sensorIndexInModule);
+          // Sensor DetElement sits under module DetElement — correct ACTS hierarchy
+          DetElement sensorDE(moduleDE, cname, globalModuleID * 10 + sensorIndexInModule);
           sensorDE.setPlacement(comp_pv);
 
           auto& sensorParams =
@@ -317,11 +319,8 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       }
     }
 
-    // --------------------------------------------------------------
-    // Envelope metadata, like the working original
-    // --------------------------------------------------------------
+    // Propagate envelope metadata to ACTS (same as original working builder)
     layer_vol->GetShape()->ComputeBBox();
-
     layerParams.set<double>("envelope_r_min", env_rmin_tol / dd4hep::mm);
     layerParams.set<double>("envelope_r_max", env_rmax_tol / dd4hep::mm);
     layerParams.set<double>("envelope_z_min", env_zmin_tol / dd4hep::mm);
@@ -331,16 +330,13 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       printout(INFO, det_name,
                "Layer %d envelope: length=%8.3f mm zstart=%8.3f mm "
                "tol(rmin,rmax,zmin,zmax)=(%6.3f,%6.3f,%6.3f,%6.3f) mm",
-               layerID,
-               env_length / mm, env_zstart / mm,
+               layerID, env_length / mm, env_zstart / mm,
                env_rmin_tol / mm, env_rmax_tol / mm,
                env_zmin_tol / mm, env_zmax_tol / mm);
     }
   }
 
-  // ------------------------------------------------------------------
   // Place the full detector assembly into the mother volume LAST
-  // ------------------------------------------------------------------
   pv = motherVol.placeVolume(assembly, posAndRot);
   pv.addPhysVolID("system", det_id);
   sdet.setPlacement(pv);
