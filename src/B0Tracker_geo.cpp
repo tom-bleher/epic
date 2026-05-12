@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (C) 2026 Whitney Armstrong, Igor Korover, Tom Bleher
+//
 // B0 Tracker - ACTS/DDRec-friendly builder
 //
 // Flattened per-layer placement version:
@@ -13,17 +15,17 @@
 #include "DD4hep/DetFactoryHelper.h"
 #include "DD4hep/Printout.h"
 #include "DD4hep/Shapes.h"
+#include "DD4hepDetectorHelper.h"
 #include "DDRec/DetectorData.h"
 #include "DDRec/Surface.h"
-#include "DD4hepDetectorHelper.h"
 #include "XML/Utilities.h"
 
-#include <map>
-#include <vector>
-#include <string>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 using namespace std;
 using namespace dd4hep;
