@@ -60,7 +60,7 @@
         <constant name="SupportRMax"       value="15.0*cm" />
         <!-- Optional extra radius for placement logic, not used in geometry for now -->
         <constant name="SupportRMaxInner"  value="5.0*cm" />
-        <constant name="SupportThickness"  value="6.35*mm" />
+        <constant name="SupportThickness"  value="4.0*mm" />
         <constant name="SupportPhiStart"   value="90*deg" />
         <constant name="SupportPhiDelta"   value="180*deg" />
         
