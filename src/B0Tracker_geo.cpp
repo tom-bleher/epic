@@ -314,8 +314,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     Placements& sensVols    = sensitives[m_nam];
     auto& sensSurfs         = volplane_surfaces[m_nam];
 
-    int moduleIndexInLayer = 1;
-    for (xml_coll_t mp(mpos, _U(module)); mp; ++mp, ++moduleIndexInLayer, ++globalModuleID) {
+    for (xml_coll_t mp(mpos, _U(module)); mp; ++mp, ++globalModuleID) {
       xml_comp_t xm = mp;
 
       const double modX      = xm.attr<double>(_Unicode(posX));

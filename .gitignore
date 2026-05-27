@@ -35,6 +35,7 @@ materials-map.cbor
 
 # local install directories
 prefix/
+install/
 lib/
 share/
 setup.sh
