@@ -9,69 +9,57 @@
         </comment>
 
         <comment>
-            - The detector length based on the 0.2*m step size and 4 layers.
-            - I start from the downstream side of the B0 magnet and an arbitrary offset
-            which puts the downstream of the detector 10cm from the end of the magnet.
+            Four AC-LGAD tracking layers inside the B0 magnet. Layer positions are
+            relative to B0TrackerCenter_zpos and are kept explicit for placement scans.
         </comment>
 
-        <constant name="B0Tracker_length"        value="81.0*cm" />
         <constant name="B0TrackerCenter_zpos"    value="5892.854*mm"/>
         <constant name="B0TrackerCenter_xpos"    value="-0.16000052*m" />
         <constant name="B0Tracker_rotation"      value="ionCrossingAngle" />
 
-        <constant name="B0Tracker_nlayers"       value="4" />
-        <constant name="B0Tracker_dz"            value="5892.854*mm"/>
         <constant name="B0TrackerLayer1_zstart"  value="0*mm"/>
         <constant name="B0TrackerLayer2_zstart"  value="269.93*mm"/>
         <constant name="B0TrackerLayer3_zstart"  value="469.54*mm"/>
         <constant name="B0TrackerLayer4_zstart"  value="809.93*mm"/>
 
         <comment>
-            Basic readout module + material parameters
+            Basic tracking unit geometry. Materials below are effective compact
+            material names used by simulation; dimensions and materials are kept
+            explicit for B0 layout/material-budget updates.
         </comment>
 
-        <parameters>
-            <parameter name="PCBMaterial"     value="Silicon" />
-            <parameter name="AsicMaterial"    value="SiliconOxide" />
-            <parameter name="SensorMaterial"  value="SiliconOxide" />
-        </parameters>
+        <constant name="B0TrackerPCBThickness"      value="2.0*mm" />
+        <constant name="B0TrackerSensorThickness"   value="0.3*mm" />
+        <constant name="B0TrackerASICThickness"     value="0.3*mm" />
 
-        <constant name="PCBThickness"      value="2.0*mm" />
-        <constant name="SensorThickness"   value="0.3*mm" />
-        <constant name="AsicThickness"     value="0.3*mm" />
+        <constant name="B0TrackerPCBWidth"          value="2.54*cm" />
+        <constant name="B0TrackerPCBLength"         value="4.6*cm" />
 
-        <constant name="PCBWidth"          value="2.54*cm" />
-        <constant name="PCBLength"         value="4.6*cm" />
+        <constant name="B0TrackerSensorWidth"       value="1.6*cm" />
+        <constant name="B0TrackerSensorLength"      value="1.6*cm" />
+        <constant name="B0TrackerSensorOverlap"     value="1.0*mm" />
 
-        <constant name="SensorWidth"       value="1.6*cm" />
-        <constant name="SensorLength"      value="1.6*cm" />
-        <constant name="SensorOverlap"     value="1.0*mm" />
-
-        <constant name="B0ConnectorPCBwidth"     value="2.54*cm" />
-        <constant name="B0ConnectorPCBlength"    value="1.0*cm" />
-        <constant name="B0ConnectorPCBThickness" value="0.425*cm" />
-
-        <constant name="ASICWidth"         value="1.6*cm" />
-        <constant name="ASICLength"        value="1.6*cm" />
-        <constant name="ASICOverlap"       value="1.0*mm" />
+        <constant name="B0TrackerASICWidth"         value="1.6*cm" />
+        <constant name="B0TrackerASICLength"        value="1.6*cm" />
+        <constant name="B0TrackerASICOverlap"       value="1.0*mm" />
 
         <!-- Support: annular sector (half-disk with inner hole) -->
-        <constant name="SupportRMin"       value="3.5*cm" />
-        <constant name="SupportRMax"       value="15.0*cm" />
-        <!-- Optional extra radius for placement logic, not used in geometry for now -->
-        <constant name="SupportRMaxInner"  value="5.0*cm" />
-        <constant name="SupportThickness"  value="4.0*mm" />
-        <constant name="SupportPhiStart"   value="90*deg" />
-        <constant name="SupportPhiDelta"   value="180*deg" />
+        <constant name="B0TrackerSupportRMin"       value="3.5*cm" />
+        <constant name="B0TrackerSupportRMax"       value="15.0*cm" />
+        <constant name="B0TrackerSupportThickness"  value="4.0*mm" />
+        <constant name="B0TrackerSupportPhiStart"   value="90*deg" />
+        <constant name="B0TrackerSupportPhiDelta"   value="180*deg" />
 
-        <constant name="BackAsicSensorThickness"
-        value="AsicThickness + SensorThickness" />
-        <constant name="ModuleThickness"
-        value="PCBThickness + BackAsicSensorThickness + 3*(AsicThickness + SensorThickness)" />
+        <constant name="B0TrackerModuleThickness"
+        value="B0TrackerPCBThickness + 2*(B0TrackerASICThickness + B0TrackerSensorThickness)" />
 
         <!-- Centre-to-centre offset between support disc and module stack -->
-        <constant name="ModuleOffsetFromSupport"
-        value="(SupportThickness + ModuleThickness)/2" />
+        <constant name="B0TrackerModuleOffsetFromSupport"
+        value="(B0TrackerSupportThickness + B0TrackerModuleThickness)/2" />
+
+        <!-- ACTS material-map binning copied to each front/back B0 tracking layer. -->
+        <constant name="B0TrackerLayerMaterialPhiBins" value="30" />
+        <constant name="B0TrackerLayerMaterialRBins"   value="20" />
 
     </define>
 
@@ -81,72 +69,66 @@
 
     <module name="TrackingUnit" vis="TrackingModule">
         <module_component name="PCB" material="Copper" vis="PCBVis">
-            <box x="PCBWidth" y="PCBLength" z="PCBThickness" />
+            <box x="B0TrackerPCBWidth" y="B0TrackerPCBLength" z="B0TrackerPCBThickness" />
             <position x="0.0*cm" y="0.0*cm" z="0.0*cm" />
         </module_component>
 
         <module_component name="ASIC1" material="SiliconOxide" vis="ASICVis">
-            <box x="ASICWidth" y="ASICLength" z="AsicThickness" />
+            <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness" />
             <position x="0.0*cm"
-            y="-(PCBLength-ASICLength)/2"
-            z="-(PCBThickness/2+AsicThickness/2)" />
+            y="-(B0TrackerPCBLength-B0TrackerASICLength)/2"
+            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness/2)" />
         </module_component>
 
         <module_component name="ASIC2" material="SiliconOxide" vis="ASICVis">
-            <box x="ASICWidth" y="ASICLength" z="AsicThickness" />
+            <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness" />
             <position x="0.0*cm"
-            y="-(PCBLength-ASICLength)/2 + ASICLength-ASICOverlap"
-            z="PCBThickness/2+AsicThickness/2" />
+            y="-(B0TrackerPCBLength-B0TrackerASICLength)/2 + B0TrackerASICLength-B0TrackerASICOverlap"
+            z="B0TrackerPCBThickness/2+B0TrackerASICThickness/2" />
         </module_component>
 
         <module_component name="ASIC3" material="SiliconOxide" vis="ASICVis">
-            <box x="ASICWidth" y="ASICLength" z="AsicThickness" />
+            <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness" />
             <position x="0.0*cm"
-            y="-(PCBLength-ASICLength)/2 + 2*(ASICLength-ASICOverlap)"
-            z="-(PCBThickness/2+AsicThickness/2)" />
+            y="-(B0TrackerPCBLength-B0TrackerASICLength)/2 + 2*(B0TrackerASICLength-B0TrackerASICOverlap)"
+            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness/2)" />
         </module_component>
 
         <module_component name="Sensor1" material="SiliconOxide" vis="SensorVis" sensitive="true">
-            <box x="SensorWidth" y="SensorLength" z="SensorThickness" />
+            <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness" />
             <position x="0.0*cm"
-            y="-(PCBLength-SensorLength)/2"
-            z="-(PCBThickness/2+AsicThickness+SensorThickness/2)" />
+            y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2"
+            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)" />
         </module_component>
 
         <module_component name="Sensor2" material="SiliconOxide" vis="SensorVis" sensitive="true">
-            <box x="SensorWidth" y="SensorLength" z="SensorThickness" />
+            <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness" />
             <position x="0.0*cm"
-            y="-(PCBLength-SensorLength)/2 + SensorLength-SensorOverlap"
-            z="(PCBThickness/2+AsicThickness+SensorThickness/2)" />
+            y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + B0TrackerSensorLength-B0TrackerSensorOverlap"
+            z="(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)" />
         </module_component>
 
         <module_component name="Sensor3" material="SiliconOxide" vis="SensorVis" sensitive="true">
-            <box x="SensorWidth" y="SensorLength" z="SensorThickness" />
+            <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness" />
             <position x="0.0*cm"
-            y="-(PCBLength-SensorLength)/2 + 2*(SensorLength-SensorOverlap)"
-            z="-(PCBThickness/2+AsicThickness+SensorThickness/2)" />
+            y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + 2*(B0TrackerSensorLength-B0TrackerSensorOverlap)"
+            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)" />
         </module_component>
-
-        <!-- <module_component name="B0ConnectorPCB" material="SiliconOxide" vis="ConnectorPCBvis">
-            <box x="B0ConnectorPCBwidth" y="B0ConnectorPCBlength" z="B0ConnectorPCBThickness" />
-            <position x="0.0*cm"
-            y="PCBLength/2"
-            z="PCBThickness/2 + B0ConnectorPCBThickness/2" />
-        </module_component>-->
     </module>
 
     <module name="B0SupportDisk" vis="B0SupportDiscVis">
       <module_component name="support" material="Copper">
-        <tube rmin="SupportRMin"
-              rmax="SupportRMax"
-              dz="SupportThickness"
-              startphi="SupportPhiStart"
-              deltaphi="SupportPhiDelta"/>
+        <tube rmin="B0TrackerSupportRMin"
+              rmax="B0TrackerSupportRMax"
+              dz="B0TrackerSupportThickness/2"
+              startphi="B0TrackerSupportPhiStart"
+              deltaphi="B0TrackerSupportPhiDelta"/>
       </module_component>
     </module>
 
     <!-- ================================================================== -->
-    <!-- Companion detector for ACTS                                        -->
+    <!-- Empty negative-endcap companion used by B0TrackerSubAssembly so     -->
+    <!-- ACTS sees B0 as a positive-only member of a two-endcap hierarchy.    -->
     <!-- ================================================================== -->
 
     <detectors>
@@ -170,15 +152,19 @@
                   readout="B0TrackerHits"
                   vis="B0TrackerVis">
 
-                  <type_flags type="DetType_TRACKER+DetType_ENDCAP"/>
+                  <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
 
                   <position x="B0TrackerCenter_xpos" y="0" z="B0TrackerCenter_zpos"/>
                   <rotation x="0" y="B0Tracker_rotation" z="0"/>
 
+                  <!-- Envelopes provide ACTS layer-boundary tolerances; the
+                       driver builds side-specific front/back sensor layers. -->
                   <layer id="1">
                           <position x="10*mm" y="0*mm" z="B0TrackerLayer1_zstart"/>
                                   <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"
-            length="SupportThickness + 2*ModuleOffsetFromSupport + 10*mm"/>
+            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport + 10*mm"/>
+                      <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+                      <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
                       <component ref="B0SupportDisk">
                         <position x="0*mm" y="0*mm" z="0*mm"/>
                       </component>
@@ -233,7 +219,9 @@
             rmax_tolerance="0*mm"
             zmin_tolerance="1*mm"
             zmax_tolerance="1*mm"
-            length="SupportThickness + 2*ModuleOffsetFromSupport + 10*mm"/>
+            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport + 10*mm"/>
+    <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+    <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
 
     <!-- Support disk for this layer -->
     <component ref="B0SupportDisk">
@@ -292,7 +280,9 @@
             rmax_tolerance="0*mm"
             zmin_tolerance="1*mm"
             zmax_tolerance="1*mm"
-            length="SupportThickness + 2*ModuleOffsetFromSupport +  10*mm"/>
+            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport +  10*mm"/>
+    <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+    <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
 
     <!-- Support for layer 3 -->
     <component ref="B0SupportDisk">
@@ -359,7 +349,9 @@
             rmax_tolerance="0*mm"
             zmin_tolerance="1*mm"
             zmax_tolerance="1*mm"
-            length="SupportThickness + 2*ModuleOffsetFromSupport +  10*mm"/>
+            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport +  10*mm"/>
+    <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+    <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
 
     <!-- Support for layer 4 -->
     <component ref="B0SupportDisk">
@@ -432,7 +424,8 @@
     <readouts>
       <readout name="B0TrackerHits">
         <comment>
-          20um resolution = 75um "pixels", but this is "effective", since we assume charge sharing in the real-life 500um AC-LGADs - this may need to addressed differently in simulations later via digitization
+          70 um effective grid pitch. The target hit resolution assumes
+          AC-LGAD charge sharing and should eventually live in digitization.
         </comment>
         <segmentation type="CartesianGridXY" grid_size_x="0.070*mm" grid_size_y="0.070*mm" />
         <id>system:8,layer:4,module:12,sensor:2,x:32:-16,y:-16</id>
@@ -442,7 +435,7 @@
     <plugins>
         <plugin name="DD4hep_ParametersPlugin">
             <argument value="B0Tracker"/>
-            <argument value="layer_pattern: str=B0Tracker_layer\d"/>
+            <argument value="layer_pattern: str=B0Tracker_layer\d+_(front|back)_P"/>
         </plugin>
     </plugins>
 
