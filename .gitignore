@@ -33,6 +33,17 @@ acts2.txt
 
 materials-map.cbor
 
+# local material-map working directory (script copies + generated maps/tracks)
+/material_map/
+
+# ACTS/DD4hep geometry visualisation exports. Archive intentional copies under
+# reports/; these root-level files are generated scratch output.
+/*SubAssembly_*.mtl
+/*SubAssembly_*.obj
+/*SubAssembly_*.ply
+/Container_v*_boundaries.*
+/acts_beampipe_*_*.*
+
 # local install directories
 prefix/
 install/
