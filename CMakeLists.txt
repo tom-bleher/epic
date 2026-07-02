@@ -134,6 +134,7 @@ install(FILES cmake/setup.sh
 )
 
 # install programs
-install(PROGRAMS bin/g4MaterialScan_to_csv
+install(PROGRAMS bin/check_b0_acts_geometry
+  bin/g4MaterialScan_to_csv
   DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

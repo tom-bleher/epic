@@ -1,442 +1,374 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
-<!-- Copyright (C) 2026 Whitney Armstrong, Igor Korover, Tom Bleher -->
+<!-- Copyright (C) 2022 - 2026 Whitney Armstrong, Alex Jentsch, Igor Korover, Tom Bleher -->
 <lccdd>
+  <define>
+    <comment>
+      ### B0 Tracker Parameters
+    </comment>
+    <comment>
+      Four AC-LGAD tracking layers inside the B0 magnet. Layer positions are
+      relative to B0TrackerCenter_zpos and are kept explicit for placement scans.
+    </comment>
+    <constant name="B0TrackerCenter_zpos" value="6099.750026*mm"/>
+    <constant name="B0TrackerCenter_xpos" value="-0.16000052*m"/>
+    <constant name="B0Tracker_rotation" value="ionCrossingAngle"/>
+    <constant name="B0TrackerLayer1_zstart" value="0*mm"/>
+    <constant name="B0TrackerLayer2_zstart" value="276.086272*mm"/>
+    <constant name="B0TrackerLayer3_zstart" value="525.164105*mm"/>
+    <constant name="B0TrackerLayer4_zstart" value="750.234436*mm"/>
+    <constant name="B0TrackerLayerXOffset" value="10*mm"/>
+    <comment>
+      Basic tracking unit geometry. Sensors and ASICs are Silicon
+      (AC-LGAD / EICROC); the PCB is modeled as bare Fr4 for now
+      (no copper trace layer yet). Dimensions and materials are kept
+      explicit for B0 layout/material-budget updates.
+    </comment>
+    <constant name="B0TrackerPCBThickness" value="2.0*mm"/>
+    <constant name="B0TrackerSensorThickness" value="0.3*mm"/>
+    <constant name="B0TrackerASICThickness" value="0.3*mm"/>
+    <constant name="B0TrackerPCBWidth" value="2.54*cm"/>
+    <constant name="B0TrackerPCBLength" value="4.6*cm"/>
+    <constant name="B0TrackerSensorWidth" value="1.6*cm"/>
+    <constant name="B0TrackerSensorLength" value="1.6*cm"/>
+    <constant name="B0TrackerSensorOverlap" value="1.0*mm"/>
+    <constant name="B0TrackerASICWidth" value="1.6*cm"/>
+    <constant name="B0TrackerASICLength" value="1.6*cm"/>
+    <constant name="B0TrackerASICOverlap" value="1.0*mm"/>
+    <!-- Support: annular sector (half-disk with inner hole) -->
+    <constant name="B0TrackerSupportRMin" value="3.5*cm"/>
+    <constant name="B0TrackerSupportRMax" value="15.0*cm"/>
+    <constant name="B0TrackerSupportThickness" value="4.0*mm"/>
+    <constant name="B0TrackerSupportPhiStart" value="90*deg"/>
+    <constant name="B0TrackerSupportPhiDelta" value="180*deg"/>
+    <constant name="B0TrackerModuleThickness" value="B0TrackerPCBThickness + 2*(B0TrackerASICThickness + B0TrackerSensorThickness)"/>
+    <!-- Centre-to-centre offset between support disc and module stack -->
+    <constant name="B0TrackerModuleOffsetFromSupport" value="(B0TrackerSupportThickness + B0TrackerModuleThickness)/2"/>
+    <!-- ACTS material-map binning copied to each front/back B0 tracking layer. -->
+    <constant name="B0TrackerLayerMaterialPhiBins" value="30"/>
+    <constant name="B0TrackerLayerMaterialRBins" value="20"/>
+  </define>
+  <!-- ================================================================== -->
+  <!-- Empty negative-endcap companion used by B0TrackerSubAssembly so    -->
+  <!-- ACTS sees B0 as a positive-only member of a two-endcap hierarchy.  -->
+  <!-- ================================================================== -->
 
-    <define>
-        <comment>
-            ### B0 Tracker Parameters
-        </comment>
-
-        <comment>
-            Four AC-LGAD tracking layers inside the B0 magnet. Layer positions are
-            relative to B0TrackerCenter_zpos and are kept explicit for placement scans.
-        </comment>
-
-        <constant name="B0TrackerCenter_zpos"    value="6099.750026*mm"/>
-        <constant name="B0TrackerCenter_xpos"    value="-0.16000052*m" />
-        <constant name="B0Tracker_rotation"      value="ionCrossingAngle" />
-
-        <constant name="B0TrackerLayer1_zstart"  value="0*mm"/>
-        <constant name="B0TrackerLayer2_zstart"  value="276.086272*mm"/>
-        <constant name="B0TrackerLayer3_zstart"  value="525.164105*mm"/>
-        <constant name="B0TrackerLayer4_zstart"  value="750.234436*mm"/>
-
-        <comment>
-            Basic tracking unit geometry. Materials below are effective compact
-            material names used by simulation; dimensions and materials are kept
-            explicit for B0 layout/material-budget updates.
-        </comment>
-
-        <constant name="B0TrackerPCBThickness"      value="2.0*mm" />
-        <constant name="B0TrackerSensorThickness"   value="0.3*mm" />
-        <constant name="B0TrackerASICThickness"     value="0.3*mm" />
-
-        <constant name="B0TrackerPCBWidth"          value="2.54*cm" />
-        <constant name="B0TrackerPCBLength"         value="4.6*cm" />
-
-        <constant name="B0TrackerSensorWidth"       value="1.6*cm" />
-        <constant name="B0TrackerSensorLength"      value="1.6*cm" />
-        <constant name="B0TrackerSensorOverlap"     value="1.0*mm" />
-
-        <constant name="B0TrackerASICWidth"         value="1.6*cm" />
-        <constant name="B0TrackerASICLength"        value="1.6*cm" />
-        <constant name="B0TrackerASICOverlap"       value="1.0*mm" />
-
-        <!-- Support: annular sector (half-disk with inner hole) -->
-        <constant name="B0TrackerSupportRMin"       value="3.5*cm" />
-        <constant name="B0TrackerSupportRMax"       value="15.0*cm" />
-        <constant name="B0TrackerSupportThickness"  value="4.0*mm" />
-        <constant name="B0TrackerSupportPhiStart"   value="90*deg" />
-        <constant name="B0TrackerSupportPhiDelta"   value="180*deg" />
-
-        <constant name="B0TrackerModuleThickness"
-        value="B0TrackerPCBThickness + 2*(B0TrackerASICThickness + B0TrackerSensorThickness)" />
-
-        <!-- Centre-to-centre offset between support disc and module stack -->
-        <constant name="B0TrackerModuleOffsetFromSupport"
-        value="(B0TrackerSupportThickness + B0TrackerModuleThickness)/2" />
-
-        <!-- ACTS material-map binning copied to each front/back B0 tracking layer. -->
-        <constant name="B0TrackerLayerMaterialPhiBins" value="30" />
-        <constant name="B0TrackerLayerMaterialRBins"   value="20" />
-
-    </define>
-
-    <!-- ================================================================== -->
-    <!-- Tracking module definition                                         -->
-    <!-- ================================================================== -->
-
-    <module name="TrackingUnit" vis="TrackingModule">
-        <module_component name="PCB" material="Copper" vis="PCBVis">
-            <box x="B0TrackerPCBWidth" y="B0TrackerPCBLength" z="B0TrackerPCBThickness" />
-            <position x="0.0*cm" y="0.0*cm" z="0.0*cm" />
+  <detectors>
+    <detector id="B0TrackerCompanion_ID" name="B0TrackerCompanion" type="epic_CompositeTracker" actsType="endcap" vis="TrackerSubAssemblyVis">
+      <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
+      <position x="0*cm" y="0*cm" z="-4*um"/>
+    </detector>
+    <!-- ================================================================= -->
+    <!-- B0Tracker main detector                                           -->
+    <!-- ================================================================= -->
+    <detector id="B0Tracker_Station_1_ID" name="B0Tracker" type="ip6_B0Tracker" readout="B0TrackerHits" vis="FFTrackerVis">
+      <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
+      <position x="B0TrackerCenter_xpos" y="0" z="B0TrackerCenter_zpos"/>
+      <rotation x="0" y="B0Tracker_rotation" z="0"/>
+      <!-- Shared tracking-unit and support-disk definitions used by all layers below -->
+      <module name="TrackingUnit" vis="FFTrackerModuleVis">
+        <module_component name="PCB" material="Fr4" vis="FFTrackerSupportVis">
+          <box x="B0TrackerPCBWidth" y="B0TrackerPCBLength" z="B0TrackerPCBThickness"/>
+          <position x="0.0*cm" y="0.0*cm" z="0.0*cm"/>
         </module_component>
-
-        <module_component name="ASIC1" material="SiliconOxide" vis="ASICVis">
-            <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness" />
-            <position x="0.0*cm"
-            y="-(B0TrackerPCBLength-B0TrackerASICLength)/2"
-            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness/2)" />
+        <module_component name="ASIC1" material="Silicon" vis="FFTrackerServiceVis">
+          <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness"/>
+          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerASICLength)/2" z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness/2)"/>
         </module_component>
-
-        <module_component name="ASIC2" material="SiliconOxide" vis="ASICVis">
-            <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness" />
-            <position x="0.0*cm"
-            y="-(B0TrackerPCBLength-B0TrackerASICLength)/2 + B0TrackerASICLength-B0TrackerASICOverlap"
-            z="B0TrackerPCBThickness/2+B0TrackerASICThickness/2" />
+        <module_component name="ASIC2" material="Silicon" vis="FFTrackerServiceVis">
+          <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness"/>
+          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerASICLength)/2 + B0TrackerASICLength-B0TrackerASICOverlap" z="B0TrackerPCBThickness/2+B0TrackerASICThickness/2"/>
         </module_component>
-
-        <module_component name="ASIC3" material="SiliconOxide" vis="ASICVis">
-            <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness" />
-            <position x="0.0*cm"
-            y="-(B0TrackerPCBLength-B0TrackerASICLength)/2 + 2*(B0TrackerASICLength-B0TrackerASICOverlap)"
-            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness/2)" />
+        <module_component name="ASIC3" material="Silicon" vis="FFTrackerServiceVis">
+          <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness"/>
+          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerASICLength)/2 + 2*(B0TrackerASICLength-B0TrackerASICOverlap)" z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness/2)"/>
         </module_component>
-
-        <module_component name="Sensor1" material="SiliconOxide" vis="SensorVis" sensitive="true">
-            <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness" />
-            <position x="0.0*cm"
-            y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2"
-            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)" />
+        <module_component name="Sensor1" material="Silicon" vis="FFTrackerSurfaceVis" sensitive="true">
+          <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness"/>
+          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2" z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)"/>
         </module_component>
-
-        <module_component name="Sensor2" material="SiliconOxide" vis="SensorVis" sensitive="true">
-            <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness" />
-            <position x="0.0*cm"
-            y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + B0TrackerSensorLength-B0TrackerSensorOverlap"
-            z="(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)" />
+        <module_component name="Sensor2" material="Silicon" vis="FFTrackerSurfaceVis" sensitive="true">
+          <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness"/>
+          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + B0TrackerSensorLength-B0TrackerSensorOverlap" z="(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)"/>
         </module_component>
-
-        <module_component name="Sensor3" material="SiliconOxide" vis="SensorVis" sensitive="true">
-            <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness" />
-            <position x="0.0*cm"
-            y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + 2*(B0TrackerSensorLength-B0TrackerSensorOverlap)"
-            z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)" />
+        <module_component name="Sensor3" material="Silicon" vis="FFTrackerSurfaceVis" sensitive="true">
+          <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness"/>
+          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + 2*(B0TrackerSensorLength-B0TrackerSensorOverlap)" z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)"/>
         </module_component>
-    </module>
-
-    <module name="B0SupportDisk" vis="B0SupportDiscVis">
-      <module_component name="support" material="Copper">
-        <tube rmin="B0TrackerSupportRMin"
-              rmax="B0TrackerSupportRMax"
-              dz="B0TrackerSupportThickness/2"
-              startphi="B0TrackerSupportPhiStart"
-              deltaphi="B0TrackerSupportPhiDelta"/>
-      </module_component>
-    </module>
-
-    <!-- ================================================================== -->
-    <!-- Empty negative-endcap companion used by B0TrackerSubAssembly so     -->
-    <!-- ACTS sees B0 as a positive-only member of a two-endcap hierarchy.    -->
-    <!-- ================================================================== -->
-
-    <detectors>
-
-        <detector id="B0TrackerCompanion_ID"
-            name="B0TrackerCompanion"
-            type="epic_CompositeTracker"
-            actsType="endcap"
-            vis="TrackerSubAssemblyVis">
-            <type_flags type="DetType_TRACKER + DetType_ENDCAP" />
-            <position x="0*cm" y="0*cm" z="-4*um" />
-        </detector>
-
-        <!-- ================================================================= -->
-        <!-- B0Tracker main detector                                           -->
-        <!-- ================================================================= -->
-
-        <detector id="B0Tracker_Station_1_ID"
-                  name="B0Tracker"
-                  type="ip6_B0Tracker"
-                  readout="B0TrackerHits"
-                  vis="B0TrackerVis">
-
-                  <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
-
-                  <position x="B0TrackerCenter_xpos" y="0" z="B0TrackerCenter_zpos"/>
-                  <rotation x="0" y="B0Tracker_rotation" z="0"/>
-
-                  <!-- Envelopes provide ACTS layer-boundary tolerances; the
-                       driver builds side-specific front/back sensor layers. -->
-                  <layer id="1">
-                          <position x="10*mm" y="0*mm" z="B0TrackerLayer1_zstart"/>
-                                  <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"
-            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport + 10*mm"/>
-                      <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-                      <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-                      <component ref="B0SupportDisk">
-                        <position x="0*mm" y="0*mm" z="0*mm"/>
-                      </component>
-                      <module_positions layer="1">
-                                <module posX="-47.8*mm"  posY="23*mm"      rotZ="0*deg"    side="back"/>
-                          <module posX="-77.8*mm"  posY="23*mm"      rotZ="0*deg"    side="back"/>
-                          <module posX="-47.8*mm"  posY="69*mm"      rotZ="0*deg"    side="back"/>
-                          <module posX="-77.8*mm"  posY="69*mm"      rotZ="0*deg"    side="back"/>
-                          <module posX="-17.8*mm"  posY="57.73*mm"   rotZ="0*deg"    side="back"/>
-                          <module posX="12.2*mm"   posY="58.1*mm"    rotZ="0*deg"    side="back"/>
-                          <module posX="42.2*mm"   posY="58.1*mm"    rotZ="0*deg"    side="back"/>
-                          <module posX="-17.8*mm"  posY="103.73*mm"  rotZ="0*deg"    side="back"/>
-                          <module posX="12.2*mm"   posY="104.1*mm"   rotZ="0*deg"    side="back"/>
-                          <module posX="-47.8*mm"  posY="-23*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-77.8*mm"  posY="-23*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-47.8*mm"  posY="-69*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-77.8*mm"  posY="-69*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-17.8*mm"  posY="-57.73*mm"  rotZ="180*deg"  side="back"/>
-                          <module posX="12.2*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="back"/>
-                          <module posX="42.2*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="back"/>
-                          <module posX="-17.8*mm"  posY="-103.73*mm" rotZ="180*deg"  side="back"/>
-                          <module posX="12.2*mm"   posY="-104.1*mm"  rotZ="180*deg"  side="back"/>
-                          <module posX="-107.8*mm" posY="0*mm"       rotZ="0*deg"    side="back"/>
-                          <module posX="-62.8*mm"  posY="23*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="-62.8*mm"  posY="69*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="-32.8*mm"  posY="51.77*mm"   rotZ="0*deg"    side="front"/>
-                          <module posX="-32.8*mm"  posY="97.77*mm"  rotZ="0*deg"    side="front"/>
-                          <module posX="-2.8*mm"   posY="58.1*mm"    rotZ="0*deg"    side="front"/>
-                          <module posX="-2.8*mm"   posY="104.1*mm"   rotZ="0*deg"    side="front"/>
-                          <module posX="27.2*mm"   posY="58.1*mm"    rotZ="0*deg"    side="front"/>
-                          <module posX="27.2*mm"   posY="104.1*mm"   rotZ="0*deg"    side="front"/>
-                          <module posX="52.6*mm"   posY="23*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="52.6*mm"   posY="-23*mm"     rotZ="0*deg"    side="front"/>
-                          <module posX="-92.8*mm"  posY="50*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="-92.8*mm"  posY="0*mm"       rotZ="0*deg"    side="front"/>
-                          <module posX="-92.8*mm"  posY="-46*mm"     rotZ="0*deg"    side="front"/>
-                          <module posX="-62.8*mm"  posY="-23*mm"     rotZ="180*deg"  side="front"/>
-                          <module posX="-62.8*mm"  posY="-69*mm"     rotZ="180*deg"  side="front"/>
-                          <module posX="-32.8*mm"  posY="-51.77*mm"  rotZ="180*deg"  side="front"/>
-                          <module posX="-32.8*mm"  posY="-97.77*mm" rotZ="180*deg"  side="front"/>
-                          <module posX="-2.8*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="front"/>
-                          <module posX="-2.8*mm"   posY="-104.1*mm"  rotZ="180*deg"  side="front"/>
-                          <module posX="27.2*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="front"/>
-                              <module posX="27.2*mm"   posY="-104.1*mm"  rotZ="180*deg"  side="front"/>
-                      </module_positions>
-              </layer>
-              <layer id="2">
-    <!-- Position of the layer relative to the detector -->
-    <position x="10*mm" y="0*mm" z="B0TrackerLayer2_zstart"/>
-<envelope vis="FFTrackerLayerVis"
-            rmin_tolerance="0*mm"
-            rmax_tolerance="0*mm"
-            zmin_tolerance="1*mm"
-            zmax_tolerance="1*mm"
-            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport + 10*mm"/>
-    <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-    <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-
-    <!-- Support disk for this layer -->
-    <component ref="B0SupportDisk">
-        <position x="0*cm" y="0*cm" z="0*mm"/>
-    </component>
-
-    <!-- Module placements converted from old tracking_plane id=2 -->
-    <module_positions layer="2">
-<module posX="-47.8*mm"  posY="23*mm"      rotZ="0*deg"    side="back"/>
-          <module posX="-77.8*mm"  posY="23*mm"      rotZ="0*deg"    side="back"/>
-                          <module posX="-47.8*mm"  posY="69*mm"      rotZ="0*deg"    side="back"/>
-                          <module posX="-77.8*mm"  posY="69*mm"      rotZ="0*deg"    side="back"/>
-                          <module posX="-17.8*mm"  posY="57.73*mm"   rotZ="0*deg"    side="back"/>
-                          <module posX="12.2*mm"   posY="58.1*mm"    rotZ="0*deg"    side="back"/>
-                          <module posX="42.2*mm"   posY="58.1*mm"    rotZ="0*deg"    side="back"/>
-                          <module posX="-17.8*mm"  posY="103.73*mm"  rotZ="0*deg"    side="back"/>
-                          <module posX="12.2*mm"   posY="104.1*mm"   rotZ="0*deg"    side="back"/>
-                          <module posX="-47.8*mm"  posY="-23*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-77.8*mm"  posY="-23*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-47.8*mm"  posY="-69*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-77.8*mm"  posY="-69*mm"     rotZ="180*deg"  side="back"/>
-                          <module posX="-17.8*mm"  posY="-57.73*mm"  rotZ="180*deg"  side="back"/>
-                          <module posX="12.2*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="back"/>
-                          <module posX="42.2*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="back"/>
-                          <module posX="-17.8*mm"  posY="-103.73*mm" rotZ="180*deg"  side="back"/>
-                          <module posX="12.2*mm"   posY="-104.1*mm"  rotZ="180*deg"  side="back"/>
-                          <module posX="-107.8*mm" posY="0*mm"       rotZ="0*deg"    side="back"/>
-                          <module posX="-62.8*mm"  posY="23*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="-62.8*mm"  posY="69*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="-32.8*mm"  posY="51.77*mm"   rotZ="0*deg"    side="front"/>
-                          <module posX="-32.8*mm"  posY="97.77*mm"  rotZ="0*deg"    side="front"/>
-                          <module posX="-2.8*mm"   posY="58.1*mm"    rotZ="0*deg"    side="front"/>
-                          <module posX="-2.8*mm"   posY="104.1*mm"   rotZ="0*deg"    side="front"/>
-                          <module posX="27.2*mm"   posY="58.1*mm"    rotZ="0*deg"    side="front"/>
-                          <module posX="27.2*mm"   posY="104.1*mm"   rotZ="0*deg"    side="front"/>
-                          <module posX="52.6*mm"   posY="23*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="52.6*mm"   posY="-23*mm"     rotZ="0*deg"    side="front"/>
-                          <module posX="-92.8*mm"  posY="50*mm"      rotZ="0*deg"    side="front"/>
-                          <module posX="-92.8*mm"  posY="0*mm"       rotZ="0*deg"    side="front"/>
-                          <module posX="-92.8*mm"  posY="-46*mm"     rotZ="0*deg"    side="front"/>
-                          <module posX="-62.8*mm"  posY="-23*mm"     rotZ="180*deg"  side="front"/>
-                          <module posX="-62.8*mm"  posY="-69*mm"     rotZ="180*deg"  side="front"/>
-                          <module posX="-32.8*mm"  posY="-51.77*mm"  rotZ="180*deg"  side="front"/>
-                          <module posX="-32.8*mm"  posY="-97.77*mm" rotZ="180*deg"  side="front"/>
-                          <module posX="-2.8*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="front"/>
-                          <module posX="-2.8*mm"   posY="-104.1*mm"  rotZ="180*deg"  side="front"/>
-                          <module posX="27.2*mm"   posY="-58.1*mm"   rotZ="180*deg"  side="front"/>
-<module posX="27.2*mm"   posY="-104.1*mm"  rotZ="180*deg"  side="front"/>
-    </module_positions>
-</layer>
-<layer id="3">
-    <!-- Layer 3 position -->
-    <position x="10*mm" y="0*mm" z="B0TrackerLayer3_zstart"/>
-<envelope vis="FFTrackerLayerVis"
-            rmin_tolerance="0*mm"
-            rmax_tolerance="0*mm"
-            zmin_tolerance="1*mm"
-            zmax_tolerance="1*mm"
-            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport +  10*mm"/>
-    <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-    <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-
-    <!-- Support for layer 3 -->
-    <component ref="B0SupportDisk">
-        <position x="0*cm" y="0*cm" z="0*mm"/>
-    </component>
-
-    <!-- Module placements -->
-    <module_positions layer="3">
-
-               <module posX="-46.8*mm"  posY="23*mm"       rotZ="0*deg"    side="back"/>
-        <module posX="-76.8*mm"  posY="23*mm"       rotZ="0*deg"    side="back"/>
-        <module posX="-46.8*mm"  posY="69*mm"       rotZ="0*deg"    side="back"/>
-        <module posX="-76.8*mm"  posY="69*mm"       rotZ="0*deg"    side="back"/>
-
-        <module posX="-16.8*mm"  posY="56.85*mm"    rotZ="0*deg"    side="back"/>
-        <module posX="13.2*mm"   posY="57.1*mm"     rotZ="0*deg"    side="back"/>
-        <module posX="-16.8*mm"  posY="102.85*mm"   rotZ="0*deg"    side="back"/>
-        <module posX="13.2*mm"   posY="103.1*mm"    rotZ="0*deg"    side="back"/>
-        <module posX="46.8*mm"   posY="23*mm"       rotZ="0*deg"    side="back"/>
-
-        <module posX="-46.8*mm"  posY="-23*mm"      rotZ="180*deg"  side="back"/>
-        <module posX="-76.8*mm"  posY="-23*mm"      rotZ="180*deg"  side="back"/>
-        <module posX="-46.8*mm"  posY="-69*mm"      rotZ="180*deg"  side="back"/>
-        <module posX="-76.8*mm"  posY="-69*mm"      rotZ="180*deg"  side="back"/>
-
-        <module posX="-16.8*mm"  posY="-56.85*mm"   rotZ="180*deg"  side="back"/>
-        <module posX="13.2*mm"   posY="-57.1*mm"    rotZ="180*deg"  side="back"/>
-        <module posX="-16.8*mm"  posY="-102.85*mm"  rotZ="180*deg"  side="back"/>
-        <module posX="13.2*mm"   posY="-103.1*mm"   rotZ="180*deg"  side="back"/>
-        <module posX="46.8*mm"   posY="-23*mm"      rotZ="180*deg"  side="back"/>
-        <module posX="-106.8*mm" posY="0*mm"        rotZ="0*deg"    side="back"/>
-
-        <module posX="-61.8*mm"  posY="23*mm"       rotZ="0*deg"    side="front"/>
-        <module posX="-61.8*mm"  posY="69*mm"       rotZ="0*deg"    side="front"/>
-        <module posX="-31.8*mm"  posY="51.25*mm"    rotZ="0*deg"    side="front"/>
-        <module posX="-31.8*mm"  posY="97.25*mm"   rotZ="0*deg"    side="front"/>
-        <module posX="-1.8*mm"   posY="57.1*mm"     rotZ="0*deg"    side="front"/>
-        <module posX="-1.8*mm"   posY="103.1*mm"    rotZ="0*deg"    side="front"/>
-        <module posX="28.2*mm"   posY="57.1*mm"     rotZ="0*deg"    side="front"/>
-        <module posX="28.2*mm"   posY="103.1*mm"    rotZ="0*deg"    side="front"/>
-        <module posX="63.8*mm"   posY="23*mm"       rotZ="0*deg"    side="front"/>
-
-        <module posX="63.8*mm"   posY="-23*mm"      rotZ="180*deg"  side="front"/>
-        <module posX="-91.8*mm"  posY="46*mm"       rotZ="0*deg"    side="front"/>
-        <module posX="-91.8*mm"  posY="0*mm"        rotZ="0*deg"    side="front"/>
-        <module posX="-91.8*mm"  posY="-46*mm"      rotZ="0*deg"    side="front"/>
-
-        <module posX="-61.8*mm"  posY="-23*mm"      rotZ="180*deg"  side="front"/>
-        <module posX="-61.8*mm"  posY="-69*mm"      rotZ="180*deg"  side="front"/>
-        <module posX="-31.8*mm"  posY="-51.25*mm"   rotZ="180*deg"  side="front"/>
-        <module posX="-31.8*mm"  posY="-97.25*mm"  rotZ="180*deg"  side="front"/>
-        <module posX="-1.8*mm"   posY="-57.1*mm"    rotZ="180*deg"  side="front"/>
-        <module posX="-1.8*mm"   posY="-103.1*mm"   rotZ="180*deg"  side="front"/>
-        <module posX="28.2*mm"   posY="-57.1*mm"    rotZ="180*deg"  side="front"/>
-            <module posX="28.2*mm"   posY="-103.1*mm"   rotZ="180*deg"  side="front"/>
-
-    </module_positions>
-</layer>
-<layer id="4">
-    <!-- Layer 4 position -->
-    <position x="10*mm" y="0*mm" z="B0TrackerLayer4_zstart"/>
-<envelope vis="FFTrackerLayerVis"
-            rmin_tolerance="0*mm"
-            rmax_tolerance="0*mm"
-            zmin_tolerance="1*mm"
-            zmax_tolerance="1*mm"
-            length="B0TrackerSupportThickness + 2*B0TrackerModuleOffsetFromSupport +  10*mm"/>
-    <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-    <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-
-    <!-- Support for layer 4 -->
-    <component ref="B0SupportDisk">
-        <position x="0*cm" y="0*cm" z="0*mm"/>
-    </component>
-
-    <!-- Module placements -->
-    <module_positions layer="4">
-
-        <module posX="-54.09*mm"  posY="23*mm"        rotZ="0*deg"    side="back"/>
-        <module posX="-84.09*mm"  posY="23*mm"        rotZ="0*deg"    side="back"/>
-        <module posX="-54.09*mm"  posY="69*mm"        rotZ="0*deg"    side="back"/>
-        <module posX="-84.09*mm"  posY="69*mm"        rotZ="0*deg"    side="back"/>
-
-        <module posX="-24.09*mm"  posY="62.79*mm"     rotZ="0*deg"    side="back"/>
-        <module posX="5.91*mm"    posY="64.39*mm"     rotZ="0*deg"    side="back"/>
-        <module posX="35.91*mm"   posY="64.39*mm"     rotZ="0*deg"    side="back"/>
-        <module posX="-24.09*mm"  posY="108.79*mm"    rotZ="0*deg"    side="back"/>
-        <module posX="5.91*mm"    posY="110.39*mm"    rotZ="0*deg"    side="back"/>
-        <module posX="35.91*mm"   posY="110.39*mm"    rotZ="0*deg"    side="back"/>
-
-        <module posX="71.31*mm"   posY="23*mm"        rotZ="0*deg"    side="back"/>
-        <module posX="71.31*mm"   posY="-23*mm"       rotZ="180*deg"  side="back"/>
-        <module posX="-54.09*mm"  posY="-23*mm"       rotZ="180*deg"  side="back"/>
-        <module posX="-84.09*mm"  posY="-23*mm"       rotZ="180*deg"  side="back"/>
-        <module posX="-54.09*mm"  posY="-69*mm"       rotZ="180*deg"  side="back"/>
-        <module posX="-84.09*mm"  posY="-69*mm"       rotZ="180*deg"  side="back"/>
-
-        <module posX="-24.09*mm"  posY="-62.79*mm"    rotZ="180*deg"  side="back"/>
-        <module posX="5.91*mm"    posY="-64.39*mm"    rotZ="180*deg"  side="back"/>
-        <module posX="35.91*mm"   posY="-64.39*mm"    rotZ="180*deg"  side="back"/>
-        <module posX="-24.09*mm"  posY="-108.79*mm"   rotZ="180*deg"  side="back"/>
-        <module posX="5.91*mm"    posY="-110.39*mm"   rotZ="180*deg"  side="back"/>
-        <module posX="35.91*mm"   posY="-110.39*mm"   rotZ="180*deg"  side="back"/>
-
-        <module posX="-114.09*mm" posY="0*mm"         rotZ="0*deg"    side="back"/>
-
-        <module posX="-69.09*mm"  posY="23*mm"        rotZ="0*deg"    side="front"/>
-        <module posX="-69.09*mm"  posY="69*mm"        rotZ="0*deg"    side="front"/>
-        <module posX="-39.09*mm"  posY="54.88*mm"     rotZ="0*deg"    side="front"/>
-        <module posX="-39.09*mm"  posY="100.88*mm"    rotZ="0*deg"    side="front"/>
-        <module posX="-9.09*mm"   posY="64.39*mm"     rotZ="0*deg"    side="front"/>
-        <module posX="-9.09*mm"   posY="110.39*mm"    rotZ="0*deg"    side="front"/>
-        <module posX="20.91*mm"   posY="64.39*mm"     rotZ="0*deg"    side="front"/>
-        <module posX="20.91*mm"   posY="110.39*mm"    rotZ="0*deg"    side="front"/>
-        <module posX="54.09*mm"   posY="23*mm"        rotZ="0*deg"    side="front"/>
-        <module posX="50.91*mm"   posY="69*mm"        rotZ="0*deg"    side="front"/>
-
-        <module posX="-99.09*mm"  posY="46*mm"        rotZ="180*deg"  side="front"/>
-        <module posX="-99.09*mm"  posY="0*mm"         rotZ="0*deg"    side="front"/>
-        <module posX="-99.09*mm"  posY="-46*mm"       rotZ="0*deg"    side="front"/>
-
-        <module posX="-69.09*mm"  posY="-23*mm"       rotZ="180*deg"  side="front"/>
-        <module posX="-69.09*mm"  posY="-69*mm"       rotZ="180*deg"  side="front"/>
-        <module posX="-39.09*mm"  posY="-54.88*mm"    rotZ="180*deg"  side="front"/>
-        <module posX="-39.09*mm"  posY="-100.88*mm"   rotZ="180*deg"  side="front"/>
-        <module posX="-9.09*mm"   posY="-64.39*mm"    rotZ="180*deg"  side="front"/>
-        <module posX="-9.09*mm"   posY="-110.39*mm"   rotZ="180*deg"  side="front"/>
-        <module posX="20.91*mm"   posY="-64.39*mm"    rotZ="180*deg"  side="front"/>
-        <module posX="20.91*mm"   posY="-110.39*mm"   rotZ="180*deg"  side="front"/>
-        <module posX="54.09*mm"   posY="-23*mm"       rotZ="180*deg"  side="front"/>
-        <module posX="50.91*mm"   posY="-69*mm"       rotZ="180*deg"  side="front"/>
-
-    </module_positions>
-</layer>
-
-        </detector>
-      </detectors>
-
-    <readouts>
-      <readout name="B0TrackerHits">
-        <comment>
-          70 um effective grid pitch. The target hit resolution assumes
-          AC-LGAD charge sharing and should eventually live in digitization.
-        </comment>
-        <segmentation type="CartesianGridXY" grid_size_x="0.070*mm" grid_size_y="0.070*mm" />
-        <id>system:8,layer:4,module:12,sensor:2,x:32:-16,y:-16</id>
-      </readout>
-    </readouts>
-
-    <plugins>
-        <plugin name="DD4hep_ParametersPlugin">
-            <argument value="B0Tracker"/>
-            <argument value="layer_pattern: str=B0Tracker_layer\d+_(front|back)_P"/>
-        </plugin>
-    </plugins>
-
+      </module>
+      <module name="B0SupportDisk" vis="FFTrackerSupportVis">
+        <module_component name="support" material="Copper">
+          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
+        </module_component>
+      </module>
+      <!-- Each <layer> is one ACTS disc layer: the front or back sensor
+           stack of a station (FTOF idiom, cf. tof_endcap.xml).
+           id = 2*(station-1) + (1=back | 2=front): one cellID "layer"
+           value per detection plane, monotonic in z. Module ids restart
+           at 1 within each layer, so cellIDs are independent of the
+           order of the <layer> blocks. position z is the station origin;
+           the driver applies the +/- module-stack offset from
+           B0TrackerModuleOffsetFromSupport. Envelope z tolerances must be
+           non-zero (eic/epic#1009). The support disk is declared in the
+           back layer but placed at the station origin. -->
+      <layer id="1" station="1" side="back">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer1_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <component ref="B0SupportDisk">
+          <position x="0*mm" y="0*mm" z="0*mm"/>
+        </component>
+        <module_positions>
+          <module posX="-47.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-77.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-47.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-77.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-17.8*mm" posY="57.73*mm" rotZ="0*deg"/>
+          <module posX="12.2*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="42.2*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="-17.8*mm" posY="103.73*mm" rotZ="0*deg"/>
+          <module posX="12.2*mm" posY="104.1*mm" rotZ="0*deg"/>
+          <module posX="-47.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-77.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-47.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-77.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-17.8*mm" posY="-57.73*mm" rotZ="180*deg"/>
+          <module posX="12.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="42.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="-17.8*mm" posY="-103.73*mm" rotZ="180*deg"/>
+          <module posX="12.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
+          <module posX="-107.8*mm" posY="0*mm" rotZ="0*deg"/>
+        </module_positions>
+      </layer>
+      <layer id="2" station="1" side="front">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer1_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <module_positions>
+          <module posX="-62.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-62.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-32.8*mm" posY="51.77*mm" rotZ="0*deg"/>
+          <module posX="-32.8*mm" posY="97.77*mm" rotZ="0*deg"/>
+          <module posX="-2.8*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="-2.8*mm" posY="104.1*mm" rotZ="0*deg"/>
+          <module posX="27.2*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="27.2*mm" posY="104.1*mm" rotZ="0*deg"/>
+          <module posX="52.6*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="52.6*mm" posY="-23*mm" rotZ="0*deg"/>
+          <module posX="-92.8*mm" posY="50*mm" rotZ="0*deg"/>
+          <module posX="-92.8*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-92.8*mm" posY="-46*mm" rotZ="0*deg"/>
+          <module posX="-62.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-62.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-32.8*mm" posY="-51.77*mm" rotZ="180*deg"/>
+          <module posX="-32.8*mm" posY="-97.77*mm" rotZ="180*deg"/>
+          <module posX="-2.8*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="-2.8*mm" posY="-104.1*mm" rotZ="180*deg"/>
+          <module posX="27.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="27.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
+        </module_positions>
+      </layer>
+      <layer id="3" station="2" side="back">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer2_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <component ref="B0SupportDisk">
+          <position x="0*cm" y="0*cm" z="0*mm"/>
+        </component>
+        <module_positions>
+          <module posX="-47.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-77.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-47.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-77.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-17.8*mm" posY="57.73*mm" rotZ="0*deg"/>
+          <module posX="12.2*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="42.2*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="-17.8*mm" posY="103.73*mm" rotZ="0*deg"/>
+          <module posX="12.2*mm" posY="104.1*mm" rotZ="0*deg"/>
+          <module posX="-47.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-77.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-47.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-77.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-17.8*mm" posY="-57.73*mm" rotZ="180*deg"/>
+          <module posX="12.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="42.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="-17.8*mm" posY="-103.73*mm" rotZ="180*deg"/>
+          <module posX="12.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
+          <module posX="-107.8*mm" posY="0*mm" rotZ="0*deg"/>
+        </module_positions>
+      </layer>
+      <layer id="4" station="2" side="front">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer2_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <module_positions>
+          <module posX="-62.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-62.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-32.8*mm" posY="51.77*mm" rotZ="0*deg"/>
+          <module posX="-32.8*mm" posY="97.77*mm" rotZ="0*deg"/>
+          <module posX="-2.8*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="-2.8*mm" posY="104.1*mm" rotZ="0*deg"/>
+          <module posX="27.2*mm" posY="58.1*mm" rotZ="0*deg"/>
+          <module posX="27.2*mm" posY="104.1*mm" rotZ="0*deg"/>
+          <module posX="52.6*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="52.6*mm" posY="-23*mm" rotZ="0*deg"/>
+          <module posX="-92.8*mm" posY="50*mm" rotZ="0*deg"/>
+          <module posX="-92.8*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-92.8*mm" posY="-46*mm" rotZ="0*deg"/>
+          <module posX="-62.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-62.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-32.8*mm" posY="-51.77*mm" rotZ="180*deg"/>
+          <module posX="-32.8*mm" posY="-97.77*mm" rotZ="180*deg"/>
+          <module posX="-2.8*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="-2.8*mm" posY="-104.1*mm" rotZ="180*deg"/>
+          <module posX="27.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
+          <module posX="27.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
+        </module_positions>
+      </layer>
+      <layer id="5" station="3" side="back">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer3_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <component ref="B0SupportDisk">
+          <position x="0*cm" y="0*cm" z="0*mm"/>
+        </component>
+        <module_positions>
+          <module posX="-46.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-76.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-46.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-76.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-16.8*mm" posY="56.85*mm" rotZ="0*deg"/>
+          <module posX="13.2*mm" posY="57.1*mm" rotZ="0*deg"/>
+          <module posX="-16.8*mm" posY="102.85*mm" rotZ="0*deg"/>
+          <module posX="13.2*mm" posY="103.1*mm" rotZ="0*deg"/>
+          <module posX="46.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-46.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-76.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-46.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-76.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-16.8*mm" posY="-56.85*mm" rotZ="180*deg"/>
+          <module posX="13.2*mm" posY="-57.1*mm" rotZ="180*deg"/>
+          <module posX="-16.8*mm" posY="-102.85*mm" rotZ="180*deg"/>
+          <module posX="13.2*mm" posY="-103.1*mm" rotZ="180*deg"/>
+          <module posX="46.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-106.8*mm" posY="0*mm" rotZ="0*deg"/>
+        </module_positions>
+      </layer>
+      <layer id="6" station="3" side="front">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer3_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <module_positions>
+          <module posX="-61.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-61.8*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-31.8*mm" posY="51.25*mm" rotZ="0*deg"/>
+          <module posX="-31.8*mm" posY="97.25*mm" rotZ="0*deg"/>
+          <module posX="-1.8*mm" posY="57.1*mm" rotZ="0*deg"/>
+          <module posX="-1.8*mm" posY="103.1*mm" rotZ="0*deg"/>
+          <module posX="28.2*mm" posY="57.1*mm" rotZ="0*deg"/>
+          <module posX="28.2*mm" posY="103.1*mm" rotZ="0*deg"/>
+          <module posX="63.8*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="63.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-91.8*mm" posY="46*mm" rotZ="0*deg"/>
+          <module posX="-91.8*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-91.8*mm" posY="-46*mm" rotZ="0*deg"/>
+          <module posX="-61.8*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-61.8*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-31.8*mm" posY="-51.25*mm" rotZ="180*deg"/>
+          <module posX="-31.8*mm" posY="-97.25*mm" rotZ="180*deg"/>
+          <module posX="-1.8*mm" posY="-57.1*mm" rotZ="180*deg"/>
+          <module posX="-1.8*mm" posY="-103.1*mm" rotZ="180*deg"/>
+          <module posX="28.2*mm" posY="-57.1*mm" rotZ="180*deg"/>
+          <module posX="28.2*mm" posY="-103.1*mm" rotZ="180*deg"/>
+        </module_positions>
+      </layer>
+      <layer id="7" station="4" side="back">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer4_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <component ref="B0SupportDisk">
+          <position x="0*cm" y="0*cm" z="0*mm"/>
+        </component>
+        <module_positions>
+          <module posX="-54.09*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-84.09*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-54.09*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-84.09*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-24.09*mm" posY="62.79*mm" rotZ="0*deg"/>
+          <module posX="5.91*mm" posY="64.39*mm" rotZ="0*deg"/>
+          <module posX="35.91*mm" posY="64.39*mm" rotZ="0*deg"/>
+          <module posX="-24.09*mm" posY="108.79*mm" rotZ="0*deg"/>
+          <module posX="5.91*mm" posY="110.39*mm" rotZ="0*deg"/>
+          <module posX="35.91*mm" posY="110.39*mm" rotZ="0*deg"/>
+          <module posX="71.31*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="71.31*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-54.09*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-84.09*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-54.09*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-84.09*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-24.09*mm" posY="-62.79*mm" rotZ="180*deg"/>
+          <module posX="5.91*mm" posY="-64.39*mm" rotZ="180*deg"/>
+          <module posX="35.91*mm" posY="-64.39*mm" rotZ="180*deg"/>
+          <module posX="-24.09*mm" posY="-108.79*mm" rotZ="180*deg"/>
+          <module posX="5.91*mm" posY="-110.39*mm" rotZ="180*deg"/>
+          <module posX="35.91*mm" posY="-110.39*mm" rotZ="180*deg"/>
+          <module posX="-114.09*mm" posY="0*mm" rotZ="0*deg"/>
+        </module_positions>
+      </layer>
+      <layer id="8" station="4" side="front">
+        <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer4_zstart"/>
+        <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+        <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
+        <module_positions>
+          <module posX="-69.09*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="-69.09*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-39.09*mm" posY="54.88*mm" rotZ="0*deg"/>
+          <module posX="-39.09*mm" posY="100.88*mm" rotZ="0*deg"/>
+          <module posX="-9.09*mm" posY="64.39*mm" rotZ="0*deg"/>
+          <module posX="-9.09*mm" posY="110.39*mm" rotZ="0*deg"/>
+          <module posX="20.91*mm" posY="64.39*mm" rotZ="0*deg"/>
+          <module posX="20.91*mm" posY="110.39*mm" rotZ="0*deg"/>
+          <module posX="54.09*mm" posY="23*mm" rotZ="0*deg"/>
+          <module posX="50.91*mm" posY="69*mm" rotZ="0*deg"/>
+          <module posX="-99.09*mm" posY="46*mm" rotZ="0*deg"/>
+          <module posX="-99.09*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-99.09*mm" posY="-46*mm" rotZ="0*deg"/>
+          <module posX="-69.09*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="-69.09*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-39.09*mm" posY="-54.88*mm" rotZ="180*deg"/>
+          <module posX="-39.09*mm" posY="-100.88*mm" rotZ="180*deg"/>
+          <module posX="-9.09*mm" posY="-64.39*mm" rotZ="180*deg"/>
+          <module posX="-9.09*mm" posY="-110.39*mm" rotZ="180*deg"/>
+          <module posX="20.91*mm" posY="-64.39*mm" rotZ="180*deg"/>
+          <module posX="20.91*mm" posY="-110.39*mm" rotZ="180*deg"/>
+          <module posX="54.09*mm" posY="-23*mm" rotZ="180*deg"/>
+          <module posX="50.91*mm" posY="-69*mm" rotZ="180*deg"/>
+        </module_positions>
+      </layer>
+    </detector>
+  </detectors>
+  <readouts>
+    <readout name="B0TrackerHits">
+      <comment>
+        70 um effective grid pitch. The target hit resolution assumes
+        AC-LGAD charge sharing and should eventually live in digitization.
+      </comment>
+      <segmentation type="CartesianGridXY" grid_size_x="0.070*mm" grid_size_y="0.070*mm"/>
+      <id>system:8,layer:4,module:12,sensor:2,x:32:-16,y:-16</id>
+    </readout>
+  </readouts>
+  <plugins>
+    <plugin name="DD4hep_ParametersPlugin">
+      <argument value="B0Tracker"/>
+      <argument value="layer_pattern: str=B0Tracker_layer\d+_(front|back)_P"/>
+    </plugin>
+  </plugins>
 </lccdd>
