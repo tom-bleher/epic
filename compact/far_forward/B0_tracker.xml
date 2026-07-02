@@ -13,14 +13,14 @@
             relative to B0TrackerCenter_zpos and are kept explicit for placement scans.
         </comment>
 
-        <constant name="B0TrackerCenter_zpos"    value="6063.525026*mm"/>
+        <constant name="B0TrackerCenter_zpos"    value="6099.750026*mm"/>
         <constant name="B0TrackerCenter_xpos"    value="-0.16000052*m" />
         <constant name="B0Tracker_rotation"      value="ionCrossingAngle" />
 
         <constant name="B0TrackerLayer1_zstart"  value="0*mm"/>
-        <constant name="B0TrackerLayer2_zstart"  value="278.687085*mm"/>
-        <constant name="B0TrackerLayer3_zstart"  value="537.668013*mm"/>
-        <constant name="B0TrackerLayer4_zstart"  value="780.243813*mm"/>
+        <constant name="B0TrackerLayer2_zstart"  value="276.086272*mm"/>
+        <constant name="B0TrackerLayer3_zstart"  value="525.164105*mm"/>
+        <constant name="B0TrackerLayer4_zstart"  value="750.234436*mm"/>
 
         <comment>
             Basic tracking unit geometry. Materials below are effective compact
