@@ -9,13 +9,13 @@
       Four AC-LGAD tracking layers inside the B0 magnet. Layer positions are
       relative to B0TrackerCenter_zpos and kept explicit.
     </comment>
-    <constant name="B0TrackerCenter_zpos" value="5892.854*mm"/>
+    <constant name="B0TrackerCenter_zpos" value="6099.75*mm"/>
     <constant name="B0TrackerCenter_xpos" value="-0.16000052*m"/>
     <constant name="B0Tracker_rotation" value="ionCrossingAngle"/>
     <constant name="B0TrackerLayer1_zstart" value="0*mm"/>
-    <constant name="B0TrackerLayer2_zstart" value="269.93*mm"/>
-    <constant name="B0TrackerLayer3_zstart" value="469.54*mm"/>
-    <constant name="B0TrackerLayer4_zstart" value="809.93*mm"/>
+    <constant name="B0TrackerLayer2_zstart" value="276.086*mm"/>
+    <constant name="B0TrackerLayer3_zstart" value="525.164*mm"/>
+    <constant name="B0TrackerLayer4_zstart" value="750.234*mm"/>
     <constant name="B0TrackerLayerXOffset" value="10*mm"/>
     <constant name="B0TrackerPCBThickness" value="1.0*mm"/>
     <constant name="B0TrackerPCBAlThickness" value="0.5*mm"/>
