@@ -19,12 +19,14 @@
     <constant name="B0TrackerLayerXOffset" value="10*mm"/>
     <comment>
       Basic tracking unit geometry. Sensors and ASICs are Silicon
-      (AC-LGAD / EICROC); the PCB is modeled as bare Fr4 for now
-      (no copper trace layer yet). Dimensions and materials are kept
-      explicit for B0 layout/material-budget updates.
+      (AC-LGAD / EICROC) on the two faces of a 1 mm Fr4 PCB; a 0.5 mm
+      aluminum sheet covers its outer face. The support is two
+      1 mm aluminum skins around a 2 mm air gap. Dimensions and materials
+      are kept explicit for B0 layout/material-budget updates.
     </comment>
-    <constant name="B0TrackerPCBThickness" value="2.0*mm"/>
-    <constant name="B0TrackerSensorThickness" value="0.3*mm"/>
+    <constant name="B0TrackerPCBThickness" value="1.0*mm"/>
+    <constant name="B0TrackerPCBAlThickness" value="0.5*mm"/>
+    <constant name="B0TrackerSensorThickness" value="0.05*mm"/>
     <constant name="B0TrackerASICThickness" value="0.3*mm"/>
     <constant name="B0TrackerPCBWidth" value="2.54*cm"/>
     <constant name="B0TrackerPCBLength" value="4.6*cm"/>
@@ -38,11 +40,15 @@
     <constant name="B0TrackerSupportRMin" value="3.5*cm"/>
     <constant name="B0TrackerSupportRMax" value="15.0*cm"/>
     <constant name="B0TrackerSupportThickness" value="4.0*mm"/>
+    <constant name="B0TrackerSupportSkinThickness" value="1.0*mm"/>
+    <constant name="B0TrackerSupportAirThickness" value="2.0*mm"/>
     <constant name="B0TrackerSupportPhiStart" value="90*deg"/>
     <constant name="B0TrackerSupportPhiDelta" value="180*deg"/>
-    <constant name="B0TrackerModuleThickness" value="B0TrackerPCBThickness + 2*(B0TrackerASICThickness + B0TrackerSensorThickness)"/>
-    <!-- Centre-to-centre offset between support disc and module stack -->
-    <constant name="B0TrackerModuleOffsetFromSupport" value="(B0TrackerSupportThickness + B0TrackerModuleThickness)/2"/>
+    <constant name="B0TrackerModuleThickness" value="B0TrackerPCBThickness + B0TrackerPCBAlThickness + 2*(B0TrackerASICThickness + B0TrackerSensorThickness)"/>
+    <!-- Support-facing extent: sensor + ASIC + half the PCB thickness. -->
+    <constant name="B0TrackerModuleSupportFacingExtent" value="B0TrackerPCBThickness/2 + B0TrackerASICThickness + B0TrackerSensorThickness"/>
+    <!-- Offset from support centre to the sensor plane on each side. -->
+    <constant name="B0TrackerModuleOffsetFromSupport" value="B0TrackerSupportThickness/2 + B0TrackerModuleSupportFacingExtent"/>
     <!-- ACTS material-map binning copied to each front/back B0 tracking layer. -->
     <constant name="B0TrackerLayerMaterialPhiBins" value="30"/>
     <constant name="B0TrackerLayerMaterialRBins" value="20"/>
@@ -70,6 +76,10 @@
           <box x="B0TrackerPCBWidth" y="B0TrackerPCBLength" z="B0TrackerPCBThickness"/>
           <position x="0.0*cm" y="0.0*cm" z="0.0*cm"/>
         </module_component>
+        <module_component name="AlSheetOuter" material="Aluminum" vis="FFTrackerShieldingVis">
+          <box x="B0TrackerPCBWidth" y="B0TrackerPCBLength" z="B0TrackerPCBAlThickness"/>
+          <position x="0.0*cm" y="0.0*cm" z="B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness+B0TrackerPCBAlThickness/2"/>
+        </module_component>
         <module_component name="ASIC1" material="Silicon" vis="FFTrackerServiceVis">
           <box x="B0TrackerASICWidth" y="B0TrackerASICLength" z="B0TrackerASICThickness"/>
           <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerASICLength)/2" z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness/2)"/>
@@ -88,7 +98,7 @@
         </module_component>
         <module_component name="Sensor2" material="Silicon" vis="FFTrackerSurfaceVis" sensitive="true">
           <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness"/>
-          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + B0TrackerSensorLength-B0TrackerSensorOverlap" z="(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)"/>
+          <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + B0TrackerSensorLength-B0TrackerSensorOverlap" z="B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2"/>
         </module_component>
         <module_component name="Sensor3" material="Silicon" vis="FFTrackerSurfaceVis" sensitive="true">
           <box x="B0TrackerSensorWidth" y="B0TrackerSensorLength" z="B0TrackerSensorThickness"/>
@@ -96,8 +106,17 @@
         </module_component>
       </module>
       <module name="B0SupportDisk" vis="FFTrackerSupportVis">
-        <module_component name="support" material="Copper">
-          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
+        <module_component name="support_skin_front" material="Aluminum">
+          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportSkinThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
+          <position x="0*mm" y="0*mm" z="-(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/>
+        </module_component>
+        <module_component name="support_air" material="Air">
+          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportAirThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
+          <position x="0*mm" y="0*mm" z="0*mm"/>
+        </module_component>
+        <module_component name="support_skin_back" material="Aluminum">
+          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportSkinThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
+          <position x="0*mm" y="0*mm" z="(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/>
         </module_component>
       </module>
       <!-- Each <layer> is one ACTS disc layer: the front or back sensor

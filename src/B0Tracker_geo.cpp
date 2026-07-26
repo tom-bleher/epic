@@ -54,6 +54,11 @@ struct ModuleComponentDef {
   double outer{0.0};
 };
 
+struct SupportComponentDef {
+  Volume volume;
+  Position position;
+};
+
 } // namespace
 
 static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector sens) {
@@ -228,30 +233,43 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   }
 
   // ------------------------------------------------------------------
-  // Support disk volume (B0SupportDisk) -- built once, placed per station.
-  // The compact <module> tube is the single source of truth; its
-  // attributes reference the B0TrackerSupport* constants.
+  // Support disk components (B0SupportDisk) -- built once, placed per
+  // station. A support can be a single disc or multiple positioned skins.
   // ------------------------------------------------------------------
   xml_h supportDisk = findModule("B0SupportDisk");
   if (!supportDisk.ptr()) {
     throw std::runtime_error("FATAL: <module name=\"B0SupportDisk\"> not found under <detector>");
   }
-  xml_comp_t x_support_module    = supportDisk;
-  xml_comp_t x_support_component = x_support_module.child(_U(module_component));
-  xml_comp_t x_support_tube      = x_support_component.child(_U(tube));
+  xml_comp_t x_support_module = supportDisk;
+  std::vector<SupportComponentDef> supportComponents;
+  for (xml_coll_t comp(x_support_module, _U(module_component)); comp; ++comp) {
+    xml_comp_t x_support_component = comp;
+    xml_comp_t x_support_tube      = x_support_component.child(_U(tube));
 
-  const std::string supportVis = getAttrOrDefault<std::string>(
-      x_support_component, _Unicode(vis),
-      getAttrOrDefault<std::string>(x_support_module, _Unicode(vis), ""));
+    const std::string supportVis = getAttrOrDefault<std::string>(
+        x_support_component, _Unicode(vis),
+        getAttrOrDefault<std::string>(x_support_module, _Unicode(vis), ""));
+    Tube supportSolid(x_support_tube.rmin(), x_support_tube.rmax(), x_support_tube.dz(),
+                      x_support_tube.attr<double>(_Unicode(startphi)),
+                      x_support_tube.attr<double>(_Unicode(startphi)) +
+                          x_support_tube.attr<double>(_Unicode(deltaphi)));
+    Material supportMat = description.material(x_support_component.materialStr());
+    Volume supportVol("B0SupportDiskVol_" + x_support_component.nameStr(), supportSolid,
+                      supportMat);
+    if (!supportVis.empty()) {
+      supportVol.setVisAttributes(description.visAttributes(supportVis));
+    }
 
-  Tube supportSolid(x_support_tube.rmin(), x_support_tube.rmax(), x_support_tube.dz(),
-                    x_support_tube.attr<double>(_Unicode(startphi)),
-                    x_support_tube.attr<double>(_Unicode(startphi)) +
-                        x_support_tube.attr<double>(_Unicode(deltaphi)));
-  Material supportMat = description.material(x_support_component.materialStr());
-  Volume supportVol("B0SupportDiskVol", supportSolid, supportMat);
-  if (!supportVis.empty()) {
-    supportVol.setVisAttributes(description.visAttributes(supportVis));
+    Position supportPosition;
+    if (x_support_component.hasChild(_U(position))) {
+      xml_dim_t x_support_position = x_support_component.child(_U(position));
+      supportPosition = Position(x_support_position.x(), x_support_position.y(),
+                                 x_support_position.z());
+    }
+    supportComponents.push_back({supportVol, supportPosition});
+  }
+  if (supportComponents.empty()) {
+    throw std::runtime_error("FATAL: B0SupportDisk has no <module_component>");
   }
 
   const double moduleOffset = description.constant<double>("B0TrackerModuleOffsetFromSupport");
@@ -326,7 +344,12 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
                                  " has unsupported <component ref=\"" + ref + "\">");
       }
       xml_dim_t sp = xc.child(_U(position));
-      assembly.placeVolume(supportVol, Position(layerX + sp.x(), layerY + sp.y(), layerZ + sp.z()));
+      for (const auto& support : supportComponents) {
+        assembly.placeVolume(support.volume,
+                             Position(layerX + sp.x() + support.position.x(),
+                                      layerY + sp.y() + support.position.y(),
+                                      layerZ + sp.z() + support.position.z()));
+      }
     }
 
     xml_comp_t mpos = x_layer.child(_Unicode(module_positions), false);
