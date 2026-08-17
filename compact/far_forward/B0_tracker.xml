@@ -280,8 +280,8 @@
           <module posX="13.201*mm" posY="57.099*mm" rotZ="0*deg"/>
           <module posX="-16.799*mm" posY="102.852*mm" rotZ="0*deg"/>
           <module posX="13.201*mm" posY="103.099*mm" rotZ="0*deg"/>
-          <module posX="43.201*mm" posY="57.099*mm" rotZ="0*deg"/>
-          <module posX="43.201*mm" posY="103.099*mm" rotZ="0*deg"/>
+          <module posX="43.201*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="43.201*mm" posY="69.000*mm" rotZ="0*deg"/>
           <module posX="-46.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
           <module posX="-76.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
           <module posX="-46.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
@@ -290,8 +290,8 @@
           <module posX="13.201*mm" posY="-57.099*mm" rotZ="180*deg"/>
           <module posX="-16.799*mm" posY="-102.852*mm" rotZ="180*deg"/>
           <module posX="13.201*mm" posY="-103.099*mm" rotZ="180*deg"/>
-          <module posX="43.201*mm" posY="-57.099*mm" rotZ="180*deg"/>
-          <module posX="43.201*mm" posY="-103.099*mm" rotZ="180*deg"/>
+          <module posX="43.201*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="43.201*mm" posY="-69.000*mm" rotZ="180*deg"/>
           <module posX="-106.799*mm" posY="0.000*mm" rotZ="0*deg"/>
         </module_positions>
       </layer>
@@ -307,12 +307,12 @@
           <module posX="-31.799*mm" posY="97.248*mm" rotZ="0*deg"/>
           <module posX="-1.799*mm" posY="57.099*mm" rotZ="0*deg"/>
           <module posX="-1.799*mm" posY="103.099*mm" rotZ="0*deg"/>
-          <module posX="28.201*mm" posY="57.099*mm" rotZ="0*deg"/>
-          <module posX="28.201*mm" posY="103.099*mm" rotZ="0*deg"/>
-          <module posX="58.201*mm" posY="57.099*mm" rotZ="0*deg"/>
-          <module posX="58.201*mm" posY="-57.099*mm" rotZ="180*deg"/>
-          <module posX="58.201*mm" posY="103.099*mm" rotZ="0*deg"/>
-          <module posX="58.201*mm" posY="-103.099*mm" rotZ="180*deg"/>
+          <module posX="28.201*mm" posY="51.703*mm" rotZ="0*deg"/>
+          <module posX="28.201*mm" posY="97.703*mm" rotZ="0*deg"/>
+          <module posX="58.201*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="58.201*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="58.201*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="58.201*mm" posY="-69.000*mm" rotZ="180*deg"/>
           <module posX="-91.799*mm" posY="46.000*mm" rotZ="0*deg"/>
           <module posX="-91.799*mm" posY="0.000*mm" rotZ="0*deg"/>
           <module posX="-91.799*mm" posY="-46.000*mm" rotZ="0*deg"/>
@@ -322,8 +322,8 @@
           <module posX="-31.799*mm" posY="-97.248*mm" rotZ="180*deg"/>
           <module posX="-1.799*mm" posY="-57.099*mm" rotZ="180*deg"/>
           <module posX="-1.799*mm" posY="-103.099*mm" rotZ="180*deg"/>
-          <module posX="28.201*mm" posY="-57.099*mm" rotZ="180*deg"/>
-          <module posX="28.201*mm" posY="-103.099*mm" rotZ="180*deg"/>
+          <module posX="28.201*mm" posY="-51.703*mm" rotZ="180*deg"/>
+          <module posX="28.201*mm" posY="-97.703*mm" rotZ="180*deg"/>
         </module_positions>
       </layer>
       <layer id="7" station="4" side="back">
@@ -341,24 +341,24 @@
           <module posX="-84.086*mm" posY="69.000*mm" rotZ="0*deg"/>
           <module posX="-24.086*mm" posY="62.789*mm" rotZ="0*deg"/>
           <module posX="5.914*mm" posY="64.386*mm" rotZ="0*deg"/>
-          <module posX="35.914*mm" posY="64.386*mm" rotZ="0*deg"/>
+          <module posX="35.914*mm" posY="53.554*mm" rotZ="0*deg"/>
           <module posX="-24.086*mm" posY="108.789*mm" rotZ="0*deg"/>
           <module posX="5.914*mm" posY="110.386*mm" rotZ="0*deg"/>
-          <module posX="35.914*mm" posY="110.386*mm" rotZ="0*deg"/>
-          <module posX="65.914*mm" posY="64.386*mm" rotZ="0*deg"/>
-          <module posX="65.914*mm" posY="-64.386*mm" rotZ="180*deg"/>
-          <module posX="65.914*mm" posY="110.386*mm" rotZ="0*deg"/>
-          <module posX="65.914*mm" posY="-110.386*mm" rotZ="180*deg"/>
+          <module posX="35.914*mm" posY="99.554*mm" rotZ="0*deg"/>
+          <module posX="65.914*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="65.914*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="65.914*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="65.914*mm" posY="-69.000*mm" rotZ="180*deg"/>
           <module posX="-54.086*mm" posY="-23.000*mm" rotZ="180*deg"/>
           <module posX="-84.086*mm" posY="-23.000*mm" rotZ="180*deg"/>
           <module posX="-54.086*mm" posY="-69.000*mm" rotZ="180*deg"/>
           <module posX="-84.086*mm" posY="-69.000*mm" rotZ="180*deg"/>
           <module posX="-24.086*mm" posY="-62.789*mm" rotZ="180*deg"/>
           <module posX="5.914*mm" posY="-64.386*mm" rotZ="180*deg"/>
-          <module posX="35.914*mm" posY="-64.386*mm" rotZ="180*deg"/>
+          <module posX="35.914*mm" posY="-53.554*mm" rotZ="180*deg"/>
           <module posX="-24.086*mm" posY="-108.789*mm" rotZ="180*deg"/>
           <module posX="5.914*mm" posY="-110.386*mm" rotZ="180*deg"/>
-          <module posX="35.914*mm" posY="-110.386*mm" rotZ="180*deg"/>
+          <module posX="35.914*mm" posY="-99.554*mm" rotZ="180*deg"/>
           <module posX="-114.086*mm" posY="0.000*mm" rotZ="0*deg"/>
         </module_positions>
       </layer>
@@ -374,12 +374,12 @@
           <module posX="-39.086*mm" posY="100.884*mm" rotZ="0*deg"/>
           <module posX="-9.086*mm" posY="64.386*mm" rotZ="0*deg"/>
           <module posX="-9.086*mm" posY="110.386*mm" rotZ="0*deg"/>
-          <module posX="20.914*mm" posY="64.386*mm" rotZ="0*deg"/>
-          <module posX="20.914*mm" posY="110.386*mm" rotZ="0*deg"/>
-          <module posX="50.914*mm" posY="64.386*mm" rotZ="0*deg"/>
-          <module posX="50.914*mm" posY="110.386*mm" rotZ="0*deg"/>
-          <module posX="50.914*mm" posY="-64.386*mm" rotZ="180*deg"/>
-          <module posX="50.914*mm" posY="-110.386*mm" rotZ="180*deg"/>
+          <module posX="20.914*mm" posY="62.319*mm" rotZ="0*deg"/>
+          <module posX="20.914*mm" posY="108.319*mm" rotZ="0*deg"/>
+          <module posX="50.914*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="50.914*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="50.914*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="50.914*mm" posY="-69.000*mm" rotZ="180*deg"/>
           <module posX="-99.086*mm" posY="46.000*mm" rotZ="180*deg"/>
           <module posX="-99.086*mm" posY="0.000*mm" rotZ="0*deg"/>
           <module posX="-99.086*mm" posY="-46.000*mm" rotZ="0*deg"/>
@@ -389,8 +389,8 @@
           <module posX="-39.086*mm" posY="-100.884*mm" rotZ="180*deg"/>
           <module posX="-9.086*mm" posY="-64.386*mm" rotZ="180*deg"/>
           <module posX="-9.086*mm" posY="-110.386*mm" rotZ="180*deg"/>
-          <module posX="20.914*mm" posY="-64.386*mm" rotZ="180*deg"/>
-          <module posX="20.914*mm" posY="-110.386*mm" rotZ="180*deg"/>
+          <module posX="20.914*mm" posY="-62.319*mm" rotZ="180*deg"/>
+          <module posX="20.914*mm" posY="-108.319*mm" rotZ="180*deg"/>
         </module_positions>
       </layer>
     </detector>
