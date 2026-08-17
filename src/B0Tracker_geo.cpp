@@ -31,6 +31,7 @@
 
 #include <cmath>
 #include <limits>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -96,7 +97,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
   // ------------------------------------------------------------------
   // Read the shared <module> definitions declared under <detector>
-  // (TrackingUnit sensor stack and B0SupportDisk), like sibling drivers.
+  // (TrackingUnit sensor stack and B0SupportPlate1..4), like sibling drivers.
   // ------------------------------------------------------------------
   auto findModule = [&x_det](const std::string& name) {
     xml_h found;
@@ -233,43 +234,61 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   }
 
   // ------------------------------------------------------------------
-  // Support disk components (B0SupportDisk) -- built once, placed per
-  // station. A support can be a single disc or multiple positioned skins.
+  // CAD support-plate components. Each station selects its OBJ-traced
+  // outline while retaining the simulation's existing material stack.
   // ------------------------------------------------------------------
-  xml_h supportDisk = findModule("B0SupportDisk");
-  if (!supportDisk.ptr()) {
-    throw std::runtime_error("FATAL: <module name=\"B0SupportDisk\"> not found under <detector>");
-  }
-  xml_comp_t x_support_module = supportDisk;
-  std::vector<SupportComponentDef> supportComponents;
-  for (xml_coll_t comp(x_support_module, _U(module_component)); comp; ++comp) {
-    xml_comp_t x_support_component = comp;
-    xml_comp_t x_support_tube      = x_support_component.child(_U(tube));
+  std::map<std::string, std::vector<SupportComponentDef>> supportComponents;
+  for (const std::string supportName : {"B0SupportPlate1", "B0SupportPlate2",
+                                        "B0SupportPlate3", "B0SupportPlate4"}) {
+    xml_h supportModule = findModule(supportName);
+    if (!supportModule.ptr()) {
+      throw std::runtime_error("FATAL: <module name=\"" + supportName + "\"> not found");
+    }
+    xml_comp_t x_support_module = supportModule;
 
-    const std::string supportVis = getAttrOrDefault<std::string>(
-        x_support_component, _Unicode(vis),
-        getAttrOrDefault<std::string>(x_support_module, _Unicode(vis), ""));
-    Tube supportSolid(x_support_tube.rmin(), x_support_tube.rmax(), x_support_tube.dz(),
-                      x_support_tube.attr<double>(_Unicode(startphi)),
-                      x_support_tube.attr<double>(_Unicode(startphi)) +
-                          x_support_tube.attr<double>(_Unicode(deltaphi)));
-    Material supportMat = description.material(x_support_component.materialStr());
-    Volume supportVol("B0SupportDiskVol_" + x_support_component.nameStr(), supportSolid,
-                      supportMat);
-    if (!supportVis.empty()) {
-      supportVol.setVisAttributes(description.visAttributes(supportVis));
+    // One CAD-traced outline per plate, shared by its skins; each
+    // <module_component> contributes its own thickness, material and offset.
+    xml_comp_t x_polygon = x_support_module.child(dd4hep::xml::Strng_t("extruded_polygon"), false);
+    if (!x_polygon.ptr()) {
+      throw std::runtime_error("FATAL: " + supportName + " lacks <extruded_polygon>");
+    }
+    std::vector<double> xVertices;
+    std::vector<double> yVertices;
+    for (xml_coll_t point(x_polygon, _U(point)); point; ++point) {
+      xml_comp_t x_point = point;
+      xVertices.push_back(x_point.x());
+      yVertices.push_back(x_point.y());
+    }
+    if (xVertices.size() < 3) {
+      throw std::runtime_error("FATAL: " + supportName + " has fewer than three polygon points");
     }
 
-    Position supportPosition;
-    if (x_support_component.hasChild(_U(position))) {
-      xml_dim_t x_support_position = x_support_component.child(_U(position));
-      supportPosition = Position(x_support_position.x(), x_support_position.y(),
-                                 x_support_position.z());
+    auto& components = supportComponents[supportName];
+    for (xml_coll_t comp(x_support_module, _U(module_component)); comp; ++comp) {
+      xml_comp_t x_support_component = comp;
+      const std::string supportVis = getAttrOrDefault<std::string>(
+          x_support_component, _Unicode(vis),
+          getAttrOrDefault<std::string>(x_support_module, _Unicode(vis), ""));
+      Material supportMat    = description.material(x_support_component.materialStr());
+      const double thickness = x_support_component.attr<double>(_Unicode(thickness));
+      ExtrudedPolygon supportSolid(xVertices, yVertices, {-thickness / 2., thickness / 2.},
+                                   {0., 0.}, {0., 0.}, {1., 1.});
+      Volume supportVol(supportName + "_" + x_support_component.nameStr(), supportSolid,
+                        supportMat);
+      if (!supportVis.empty()) {
+        supportVol.setVisAttributes(description.visAttributes(supportVis));
+      }
+      Position supportPosition;
+      if (x_support_component.hasChild(_U(position))) {
+        xml_dim_t x_support_position = x_support_component.child(_U(position));
+        supportPosition = Position(x_support_position.x(), x_support_position.y(),
+                                   x_support_position.z());
+      }
+      components.push_back({supportVol, supportPosition});
     }
-    supportComponents.push_back({supportVol, supportPosition});
-  }
-  if (supportComponents.empty()) {
-    throw std::runtime_error("FATAL: B0SupportDisk has no <module_component>");
+    if (components.empty()) {
+      throw std::runtime_error("FATAL: " + supportName + " has no <module_component>");
+    }
   }
 
   const double moduleOffset = description.constant<double>("B0TrackerModuleOffsetFromSupport");
@@ -332,19 +351,20 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     const double layerZ = lp.z();
 
     // --------------------------------------------------------------
-    // Support disks are detailed material at the station origin. The ACTS
+    // CAD support plates are detailed material at the station origin. The ACTS
     // measurement layers are the sensor stacks, so material maps project
     // this support material onto the adjacent layer surfaces.
     // --------------------------------------------------------------
     for (xml_coll_t comp(x_layer, _U(component)); comp; ++comp) {
       xml_comp_t xc         = comp;
       const std::string ref = xc.attr<std::string>(_Unicode(ref));
-      if (ref != "B0SupportDisk") {
+      const auto supportIt = supportComponents.find(ref);
+      if (supportIt == supportComponents.end()) {
         throw std::runtime_error("FATAL: B0Tracker layer " + std::to_string(layerID) +
                                  " has unsupported <component ref=\"" + ref + "\">");
       }
       xml_dim_t sp = xc.child(_U(position));
-      for (const auto& support : supportComponents) {
+      for (const auto& support : supportIt->second) {
         assembly.placeVolume(support.volume,
                              Position(layerX + sp.x() + support.position.x(),
                                       layerY + sp.y() + support.position.y(),

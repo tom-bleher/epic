@@ -6,8 +6,8 @@
       ### B0 Tracker Parameters
     </comment>
     <comment>
-      Four AC-LGAD tracking layers inside the B0 magnet. Layer positions are
-      relative to B0TrackerCenter_zpos and are kept explicit for placement scans.
+      Four AC-LGAD tracking layers inside the B0 magnet. Support plates
+      and module layout are updated for the CAD design.
     </comment>
     <constant name="B0TrackerCenter_zpos" value="6099.75*mm"/>
     <constant name="B0TrackerCenter_xpos" value="-0.16000052*m"/>
@@ -36,14 +36,12 @@
     <constant name="B0TrackerASICWidth" value="1.6*cm"/>
     <constant name="B0TrackerASICLength" value="1.6*cm"/>
     <constant name="B0TrackerASICOverlap" value="1.0*mm"/>
-    <!-- Support: annular sector (half-disk with inner hole) -->
-    <constant name="B0TrackerSupportRMin" value="3.5*cm"/>
-    <constant name="B0TrackerSupportRMax" value="15.0*cm"/>
+    <!-- Support: CAD plate outline (B0_Rail Concept May 2026) with the
+         existing Al/Air/Al sandwich. Inner holes are 35.099 mm (planes
+         1-3) and 41.385 mm (plane 4); +x ear cutouts are r = 95 mm. -->
     <constant name="B0TrackerSupportThickness" value="4.0*mm"/>
     <constant name="B0TrackerSupportSkinThickness" value="1.0*mm"/>
     <constant name="B0TrackerSupportAirThickness" value="2.0*mm"/>
-    <constant name="B0TrackerSupportPhiStart" value="90*deg"/>
-    <constant name="B0TrackerSupportPhiDelta" value="180*deg"/>
     <constant name="B0TrackerModuleThickness" value="B0TrackerPCBThickness + B0TrackerPCBAlThickness + 2*(B0TrackerASICThickness + B0TrackerSensorThickness)"/>
     <!-- Support-facing extent: sensor + ASIC + half the PCB thickness. -->
     <constant name="B0TrackerModuleSupportFacingExtent" value="B0TrackerPCBThickness/2 + B0TrackerASICThickness + B0TrackerSensorThickness"/>
@@ -70,7 +68,7 @@
       <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
       <position x="B0TrackerCenter_xpos" y="0" z="B0TrackerCenter_zpos"/>
       <rotation x="0" y="B0Tracker_rotation" z="0"/>
-      <!-- Shared tracking-unit and support-disk definitions used by all layers below -->
+      <!-- Shared tracking-unit and CAD support-plate definitions used by all layers below -->
       <module name="TrackingUnit" vis="FFTrackerModuleVis">
         <module_component name="PCB" material="Fr4" vis="FFTrackerSupportVis">
           <box x="B0TrackerPCBWidth" y="B0TrackerPCBLength" z="B0TrackerPCBThickness"/>
@@ -105,19 +103,29 @@
           <position x="0.0*cm" y="-(B0TrackerPCBLength-B0TrackerSensorLength)/2 + 2*(B0TrackerSensorLength-B0TrackerSensorOverlap)" z="-(B0TrackerPCBThickness/2+B0TrackerASICThickness+B0TrackerSensorThickness/2)"/>
         </module_component>
       </module>
-      <module name="B0SupportDisk" vis="FFTrackerSupportVis">
-        <module_component name="support_skin_front" material="Aluminum">
-          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportSkinThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
-          <position x="0*mm" y="0*mm" z="-(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/>
-        </module_component>
-        <module_component name="support_air" material="Air">
-          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportAirThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
-          <position x="0*mm" y="0*mm" z="0*mm"/>
-        </module_component>
-        <module_component name="support_skin_back" material="Aluminum">
-          <tube rmin="B0TrackerSupportRMin" rmax="B0TrackerSupportRMax" dz="B0TrackerSupportSkinThickness/2" startphi="B0TrackerSupportPhiStart" deltaphi="B0TrackerSupportPhiDelta"/>
-          <position x="0*mm" y="0*mm" z="(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/>
-        </module_component>
+      <module name="B0SupportPlate1" vis="FFTrackerSupportVis">
+        <extruded_polygon><point x="0.000167*mm" y="35.098953*mm"/><point x="-9.084122*mm" y="33.902983*mm"/><point x="-17.549330*mm" y="30.396573*mm"/><point x="-24.818572*mm" y="24.818692*mm"/><point x="-30.396452*mm" y="17.549451*mm"/><point x="-33.902863*mm" y="9.084241*mm"/><point x="-35.098825*mm" y="-0.000050*mm"/><point x="-33.902863*mm" y="-9.084341*mm"/><point x="-30.396452*mm" y="-17.549552*mm"/><point x="-24.818574*mm" y="-24.818793*mm"/><point x="-17.549328*mm" y="-30.396673*mm"/><point x="-9.084115*mm" y="-33.903084*mm"/><point x="0.000176*mm" y="-35.099054*mm"/><point x="46.721865*mm" y="-35.099054*mm"/><point x="53.032695*mm" y="-48.024335*mm"/><point x="61.222545*mm" y="-59.848716*mm"/><point x="71.103690*mm" y="-70.301108*mm"/><point x="82.449598*mm" y="-79.141928*mm"/><point x="95.000174*mm" y="-86.168489*mm"/><point x="95.000174*mm" y="-161.500047*mm"/><point x="5.000174*mm" y="-161.500047*mm"/><point x="-84.999826*mm" y="-161.500047*mm"/><point x="-100.516868*mm" y="-137.327415*mm"/><point x="-113.446805*mm" y="-111.677632*mm"/><point x="-123.650559*mm" y="-84.826589*mm"/><point x="-131.018378*mm" y="-57.063126*mm"/><point x="-135.471012*mm" y="-28.685863*mm"/><point x="-136.960566*mm" y="-0.000050*mm"/><point x="-135.471010*mm" y="28.685763*mm"/><point x="-131.018379*mm" y="57.063025*mm"/><point x="-123.650563*mm" y="84.826488*mm"/><point x="-113.446804*mm" y="111.677531*mm"/><point x="-100.516862*mm" y="137.327314*mm"/><point x="-84.999828*mm" y="161.499946*mm"/><point x="5.000172*mm" y="161.499946*mm"/><point x="95.000172*mm" y="161.499946*mm"/><point x="95.000171*mm" y="86.168389*mm"/><point x="82.449597*mm" y="79.141828*mm"/><point x="71.103683*mm" y="70.301007*mm"/><point x="61.222547*mm" y="59.848606*mm"/><point x="53.032695*mm" y="48.024235*mm"/><point x="46.721865*mm" y="35.098953*mm"/></extruded_polygon>
+        <module_component name="support_skin_front" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="-(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
+        <module_component name="support_air" material="Air" thickness="B0TrackerSupportAirThickness"><position x="0*mm" y="0*mm" z="0*mm"/></module_component>
+        <module_component name="support_skin_back" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
+      </module>
+      <module name="B0SupportPlate2" vis="FFTrackerSupportVis">
+        <extruded_polygon><point x="-80.911363*mm" y="-161.499954*mm"/><point x="-96.572577*mm" y="-137.540862*mm"/><point x="-109.645436*mm" y="-112.076919*mm"/><point x="-119.986912*mm" y="-85.386736*mm"/><point x="-127.483840*mm" y="-57.762324*mm"/><point x="-132.054212*mm" y="-29.505941*mm"/><point x="-133.648022*mm" y="-0.926718*mm"/><point x="-132.247830*mm" y="27.662645*mm"/><point x="-127.868950*mm" y="55.949338*mm"/><point x="-120.559293*mm" y="83.623891*mm"/><point x="-110.398841*mm" y="110.383514*mm"/><point x="-97.498754*mm" y="135.935416*mm"/><point x="-82.000184*mm" y="160.000039*mm"/><point x="6.499820*mm" y="160.000039*mm"/><point x="94.999823*mm" y="160.000039*mm"/><point x="94.999819*mm" y="85.419451*mm"/><point x="82.583475*mm" y="78.482261*mm"/><point x="71.341956*mm" y="69.769130*mm"/><point x="61.527252*mm" y="59.475359*mm"/><point x="53.359354*mm" y="47.831667*mm"/><point x="47.021322*mm" y="35.099036*mm"/><point x="-0.000179*mm" y="35.099036*mm"/><point x="-9.084469*mm" y="33.903076*mm"/><point x="-17.549677*mm" y="30.396666*mm"/><point x="-24.818918*mm" y="24.818785*mm"/><point x="-30.396809*mm" y="17.549544*mm"/><point x="-33.903209*mm" y="9.084333*mm"/><point x="-35.099182*mm" y="0.000042*mm"/><point x="-33.903209*mm" y="-9.084249*mm"/><point x="-30.396809*mm" y="-17.549459*mm"/><point x="-24.818920*mm" y="-24.818700*mm"/><point x="-17.549685*mm" y="-30.396581*mm"/><point x="-9.084471*mm" y="-33.902991*mm"/><point x="-0.000180*mm" y="-35.098961*mm"/><point x="46.424905*mm" y="-35.098961*mm"/><point x="52.706510*mm" y="-48.217362*mm"/><point x="60.917072*mm" y="-60.223114*mm"/><point x="70.864125*mm" y="-70.834765*mm"/><point x="82.314507*mm" y="-79.803596*mm"/><point x="94.999822*mm" y="-86.919366*mm"/><point x="94.999817*mm" y="-161.499954*mm"/><point x="7.044232*mm" y="-161.499954*mm"/></extruded_polygon>
+        <module_component name="support_skin_front" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="-(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
+        <module_component name="support_air" material="Air" thickness="B0TrackerSupportAirThickness"><position x="0*mm" y="0*mm" z="0*mm"/></module_component>
+        <module_component name="support_skin_back" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
+      </module>
+      <module name="B0SupportPlate3" vis="FFTrackerSupportVis">
+        <extruded_polygon><point x="-0.000526*mm" y="35.099128*mm"/><point x="-9.084815*mm" y="33.903158*mm"/><point x="-17.550023*mm" y="30.396758*mm"/><point x="-24.819264*mm" y="24.818867*mm"/><point x="-30.397145*mm" y="17.549626*mm"/><point x="-33.903556*mm" y="9.084415*mm"/><point x="-35.099518*mm" y="0.000134*mm"/><point x="-33.903556*mm" y="-9.084157*mm"/><point x="-30.397145*mm" y="-17.549367*mm"/><point x="-24.819267*mm" y="-24.818608*mm"/><point x="-17.550021*mm" y="-30.396499*mm"/><point x="-9.084807*mm" y="-33.902899*mm"/><point x="-0.000527*mm" y="-35.098869*mm"/><point x="46.721172*mm" y="-35.098869*mm"/><point x="53.031992*mm" y="-48.024160*mm"/><point x="61.221852*mm" y="-59.848532*mm"/><point x="71.102997*mm" y="-70.300933*mm"/><point x="82.448895*mm" y="-79.141744*mm"/><point x="94.999481*mm" y="-86.168314*mm"/><point x="94.999481*mm" y="-161.499872*mm"/><point x="8.048861*mm" y="-161.499872*mm"/><point x="-78.901759*mm" y="-161.499872*mm"/><point x="-94.673310*mm" y="-137.581420*mm"/><point x="-107.841793*mm" y="-112.136867*mm"/><point x="-118.261130*mm" y="-85.448444*mm"/><point x="-125.815746*mm" y="-57.812202*mm"/><point x="-130.421853*mm" y="-29.534689*mm"/><point x="-132.028344*mm" y="-0.929556*mm"/><point x="-130.617411*mm" y="27.685877*mm"/><point x="-126.204696*mm" y="55.994220*mm"/><point x="-118.839151*mm" y="83.681453*mm"/><point x="-108.602478*mm" y="110.440466*mm"/><point x="-95.608217*mm" y="135.974438*mm"/><point x="-80.000521*mm" y="160.000131*mm"/><point x="7.499478*mm" y="160.000131*mm"/><point x="94.999477*mm" y="160.000131*mm"/><point x="94.999478*mm" y="86.168573*mm"/><point x="82.448904*mm" y="79.142003*mm"/><point x="71.102990*mm" y="70.301192*mm"/><point x="61.221854*mm" y="59.848791*mm"/><point x="53.031992*mm" y="48.024419*mm"/><point x="46.721162*mm" y="35.099128*mm"/></extruded_polygon>
+        <module_component name="support_skin_front" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="-(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
+        <module_component name="support_air" material="Air" thickness="B0TrackerSupportAirThickness"><position x="0*mm" y="0*mm" z="0*mm"/></module_component>
+        <module_component name="support_skin_back" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
+      </module>
+      <module name="B0SupportPlate4" vis="FFTrackerSupportVis">
+        <extruded_polygon><point x="-0.000874*mm" y="41.385721*mm"/><point x="-10.712230*mm" y="39.975540*mm"/><point x="-20.693621*mm" y="35.841110*mm"/><point x="-29.264838*mm" y="29.264189*mm"/><point x="-35.841763*mm" y="20.692968*mm"/><point x="-39.976196*mm" y="10.711577*mm"/><point x="-41.386372*mm" y="0.000216*mm"/><point x="-39.976191*mm" y="-10.711135*mm"/><point x="-35.841761*mm" y="-20.692526*mm"/><point x="-29.264839*mm" y="-29.263747*mm"/><point x="-20.693623*mm" y="-35.840677*mm"/><point x="-10.712226*mm" y="-39.975108*mm"/><point x="-0.000872*mm" y="-41.385278*mm"/><point x="49.487495*mm" y="-41.385278*mm"/><point x="57.797146*mm" y="-55.360899*mm"/><point x="68.368276*mm" y="-67.714841*mm"/><point x="80.891212*mm" y="-78.085202*mm"/><point x="94.999134*mm" y="-86.168222*mm"/><point x="94.999134*mm" y="-161.499780*mm"/><point x="10.561356*mm" y="-161.499780*mm"/><point x="-73.876421*mm" y="-161.499780*mm"/><point x="-89.929883*mm" y="-137.686558*mm"/><point x="-103.343022*mm" y="-112.292235*mm"/><point x="-113.961808*mm" y="-85.608443*mm"/><point x="-121.664296*mm" y="-57.941570*mm"/><point x="-126.362045*mm" y="-29.609357*mm"/><point x="-128.001100*mm" y="-0.937114*mm"/><point x="-126.562642*mm" y="27.745879*mm"/><point x="-122.063195*mm" y="56.110272*mm"/><point x="-114.554418*mm" y="83.830335*mm"/><point x="-104.122548*mm" y="110.587758*mm"/><point x="-90.887373*mm" y="136.075280*mm"/><point x="-75.000867*mm" y="160.000223*mm"/><point x="9.999131*mm" y="160.000223*mm"/><point x="94.999130*mm" y="160.000223*mm"/><point x="94.999132*mm" y="86.168655*mm"/><point x="80.891215*mm" y="78.085644*mm"/><point x="68.368279*mm" y="67.715283*mm"/><point x="57.797149*mm" y="55.361342*mm"/><point x="49.487493*mm" y="41.385721*mm"/></extruded_polygon>
+        <module_component name="support_skin_front" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="-(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
+        <module_component name="support_air" material="Air" thickness="B0TrackerSupportAirThickness"><position x="0*mm" y="0*mm" z="0*mm"/></module_component>
+        <module_component name="support_skin_back" material="Aluminum" thickness="B0TrackerSupportSkinThickness"><position x="0*mm" y="0*mm" z="(B0TrackerSupportThickness-B0TrackerSupportSkinThickness)/2"/></module_component>
       </module>
       <!-- Each <layer> is one ACTS disc layer: the front or back sensor
            stack of a station (FTOF idiom, cf. tof_endcap.xml).
@@ -127,36 +135,38 @@
            order of the <layer> blocks. position z is the station origin;
            the driver applies the +/- module-stack offset from
            B0TrackerModuleOffsetFromSupport. Envelope z tolerances must be
-           non-zero (eic/epic#1009). The support disk is declared in the
+           non-zero (eic/epic#1009). The support plate is declared in the
            back layer but placed at the station origin. -->
       <layer id="1" station="1" side="back">
         <position x="B0TrackerLayerXOffset" y="0*mm" z="B0TrackerLayer1_zstart"/>
         <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-        <component ref="B0SupportDisk">
+        <component ref="B0SupportPlate1">
           <position x="0*mm" y="0*mm" z="0*mm"/>
         </component>
         <module_positions>
-          <module posX="-47.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-77.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-47.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-77.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-17.8*mm" posY="57.73*mm" rotZ="0*deg"/>
-          <module posX="12.2*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="42.2*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="-17.8*mm" posY="103.73*mm" rotZ="0*deg"/>
-          <module posX="12.2*mm" posY="104.1*mm" rotZ="0*deg"/>
-          <module posX="-47.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-77.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-47.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-77.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-17.8*mm" posY="-57.73*mm" rotZ="180*deg"/>
-          <module posX="12.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="42.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="-17.8*mm" posY="-103.73*mm" rotZ="180*deg"/>
-          <module posX="12.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
-          <module posX="-107.8*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-47.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-77.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-47.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-77.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-17.799*mm" posY="57.727*mm" rotZ="0*deg"/>
+          <module posX="12.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="42.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="-17.799*mm" posY="103.727*mm" rotZ="0*deg"/>
+          <module posX="12.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="42.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="-47.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-77.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-47.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-77.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-17.799*mm" posY="-57.727*mm" rotZ="180*deg"/>
+          <module posX="12.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="42.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="-17.799*mm" posY="-103.727*mm" rotZ="180*deg"/>
+          <module posX="12.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="42.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="-107.799*mm" posY="0.000*mm" rotZ="0*deg"/>
         </module_positions>
       </layer>
       <layer id="2" station="1" side="front">
@@ -165,27 +175,29 @@
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <module_positions>
-          <module posX="-62.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-62.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-32.8*mm" posY="51.77*mm" rotZ="0*deg"/>
-          <module posX="-32.8*mm" posY="97.77*mm" rotZ="0*deg"/>
-          <module posX="-2.8*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="-2.8*mm" posY="104.1*mm" rotZ="0*deg"/>
-          <module posX="27.2*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="27.2*mm" posY="104.1*mm" rotZ="0*deg"/>
-          <module posX="52.6*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="52.6*mm" posY="-23*mm" rotZ="0*deg"/>
-          <module posX="-92.8*mm" posY="50*mm" rotZ="0*deg"/>
-          <module posX="-92.8*mm" posY="0*mm" rotZ="0*deg"/>
-          <module posX="-92.8*mm" posY="-46*mm" rotZ="0*deg"/>
-          <module posX="-62.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-62.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-32.8*mm" posY="-51.77*mm" rotZ="180*deg"/>
-          <module posX="-32.8*mm" posY="-97.77*mm" rotZ="180*deg"/>
-          <module posX="-2.8*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="-2.8*mm" posY="-104.1*mm" rotZ="180*deg"/>
-          <module posX="27.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="27.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
+          <module posX="-62.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-62.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-32.799*mm" posY="51.774*mm" rotZ="0*deg"/>
+          <module posX="-32.799*mm" posY="97.774*mm" rotZ="0*deg"/>
+          <module posX="-2.799*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="-2.799*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="27.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="27.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="57.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="57.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="57.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="57.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="-92.799*mm" posY="46.000*mm" rotZ="0*deg"/>
+          <module posX="-92.799*mm" posY="0.000*mm" rotZ="0*deg"/>
+          <module posX="-92.799*mm" posY="-46.000*mm" rotZ="0*deg"/>
+          <module posX="-62.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-62.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-32.799*mm" posY="-51.774*mm" rotZ="180*deg"/>
+          <module posX="-32.799*mm" posY="-97.774*mm" rotZ="180*deg"/>
+          <module posX="-2.799*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="-2.799*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="27.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="27.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
         </module_positions>
       </layer>
       <layer id="3" station="2" side="back">
@@ -193,29 +205,31 @@
         <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-        <component ref="B0SupportDisk">
+        <component ref="B0SupportPlate2">
           <position x="0*cm" y="0*cm" z="0*mm"/>
         </component>
         <module_positions>
-          <module posX="-47.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-77.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-47.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-77.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-17.8*mm" posY="57.73*mm" rotZ="0*deg"/>
-          <module posX="12.2*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="42.2*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="-17.8*mm" posY="103.73*mm" rotZ="0*deg"/>
-          <module posX="12.2*mm" posY="104.1*mm" rotZ="0*deg"/>
-          <module posX="-47.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-77.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-47.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-77.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-17.8*mm" posY="-57.73*mm" rotZ="180*deg"/>
-          <module posX="12.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="42.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="-17.8*mm" posY="-103.73*mm" rotZ="180*deg"/>
-          <module posX="12.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
-          <module posX="-107.8*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-47.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-77.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-47.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-77.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-17.799*mm" posY="57.727*mm" rotZ="0*deg"/>
+          <module posX="12.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="42.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="-17.799*mm" posY="103.727*mm" rotZ="0*deg"/>
+          <module posX="12.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="42.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="-47.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-77.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-47.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-77.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-17.799*mm" posY="-57.727*mm" rotZ="180*deg"/>
+          <module posX="12.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="42.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="-17.799*mm" posY="-103.727*mm" rotZ="180*deg"/>
+          <module posX="12.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="42.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="-107.799*mm" posY="0.000*mm" rotZ="0*deg"/>
         </module_positions>
       </layer>
       <layer id="4" station="2" side="front">
@@ -224,27 +238,29 @@
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <module_positions>
-          <module posX="-62.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-62.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-32.8*mm" posY="51.77*mm" rotZ="0*deg"/>
-          <module posX="-32.8*mm" posY="97.77*mm" rotZ="0*deg"/>
-          <module posX="-2.8*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="-2.8*mm" posY="104.1*mm" rotZ="0*deg"/>
-          <module posX="27.2*mm" posY="58.1*mm" rotZ="0*deg"/>
-          <module posX="27.2*mm" posY="104.1*mm" rotZ="0*deg"/>
-          <module posX="52.6*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="52.6*mm" posY="-23*mm" rotZ="0*deg"/>
-          <module posX="-92.8*mm" posY="50*mm" rotZ="0*deg"/>
-          <module posX="-92.8*mm" posY="0*mm" rotZ="0*deg"/>
-          <module posX="-92.8*mm" posY="-46*mm" rotZ="0*deg"/>
-          <module posX="-62.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-62.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-32.8*mm" posY="-51.77*mm" rotZ="180*deg"/>
-          <module posX="-32.8*mm" posY="-97.77*mm" rotZ="180*deg"/>
-          <module posX="-2.8*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="-2.8*mm" posY="-104.1*mm" rotZ="180*deg"/>
-          <module posX="27.2*mm" posY="-58.1*mm" rotZ="180*deg"/>
-          <module posX="27.2*mm" posY="-104.1*mm" rotZ="180*deg"/>
+          <module posX="-62.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-62.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-32.799*mm" posY="51.774*mm" rotZ="0*deg"/>
+          <module posX="-32.799*mm" posY="97.774*mm" rotZ="0*deg"/>
+          <module posX="-2.799*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="-2.799*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="27.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="27.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="57.201*mm" posY="58.099*mm" rotZ="0*deg"/>
+          <module posX="57.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="57.201*mm" posY="104.099*mm" rotZ="0*deg"/>
+          <module posX="57.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="-92.799*mm" posY="46.000*mm" rotZ="0*deg"/>
+          <module posX="-92.799*mm" posY="0.000*mm" rotZ="0*deg"/>
+          <module posX="-92.799*mm" posY="-46.000*mm" rotZ="0*deg"/>
+          <module posX="-62.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-62.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-32.799*mm" posY="-51.774*mm" rotZ="180*deg"/>
+          <module posX="-32.799*mm" posY="-97.774*mm" rotZ="180*deg"/>
+          <module posX="-2.799*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="-2.799*mm" posY="-104.099*mm" rotZ="180*deg"/>
+          <module posX="27.201*mm" posY="-58.099*mm" rotZ="180*deg"/>
+          <module posX="27.201*mm" posY="-104.099*mm" rotZ="180*deg"/>
         </module_positions>
       </layer>
       <layer id="5" station="3" side="back">
@@ -252,29 +268,31 @@
         <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-        <component ref="B0SupportDisk">
+        <component ref="B0SupportPlate3">
           <position x="0*cm" y="0*cm" z="0*mm"/>
         </component>
         <module_positions>
-          <module posX="-46.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-76.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-46.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-76.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-16.8*mm" posY="56.85*mm" rotZ="0*deg"/>
-          <module posX="13.2*mm" posY="57.1*mm" rotZ="0*deg"/>
-          <module posX="-16.8*mm" posY="102.85*mm" rotZ="0*deg"/>
-          <module posX="13.2*mm" posY="103.1*mm" rotZ="0*deg"/>
-          <module posX="46.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-46.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-76.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-46.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-76.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-16.8*mm" posY="-56.85*mm" rotZ="180*deg"/>
-          <module posX="13.2*mm" posY="-57.1*mm" rotZ="180*deg"/>
-          <module posX="-16.8*mm" posY="-102.85*mm" rotZ="180*deg"/>
-          <module posX="13.2*mm" posY="-103.1*mm" rotZ="180*deg"/>
-          <module posX="46.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-106.8*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-46.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-76.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-46.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-76.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-16.799*mm" posY="56.852*mm" rotZ="0*deg"/>
+          <module posX="13.201*mm" posY="57.099*mm" rotZ="0*deg"/>
+          <module posX="-16.799*mm" posY="102.852*mm" rotZ="0*deg"/>
+          <module posX="13.201*mm" posY="103.099*mm" rotZ="0*deg"/>
+          <module posX="43.201*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="43.201*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-46.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-76.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-46.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-76.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-16.799*mm" posY="-56.852*mm" rotZ="180*deg"/>
+          <module posX="13.201*mm" posY="-57.099*mm" rotZ="180*deg"/>
+          <module posX="-16.799*mm" posY="-102.852*mm" rotZ="180*deg"/>
+          <module posX="13.201*mm" posY="-103.099*mm" rotZ="180*deg"/>
+          <module posX="43.201*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="43.201*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-106.799*mm" posY="0.000*mm" rotZ="0*deg"/>
         </module_positions>
       </layer>
       <layer id="6" station="3" side="front">
@@ -283,27 +301,29 @@
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <module_positions>
-          <module posX="-61.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-61.8*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-31.8*mm" posY="51.25*mm" rotZ="0*deg"/>
-          <module posX="-31.8*mm" posY="97.25*mm" rotZ="0*deg"/>
-          <module posX="-1.8*mm" posY="57.1*mm" rotZ="0*deg"/>
-          <module posX="-1.8*mm" posY="103.1*mm" rotZ="0*deg"/>
-          <module posX="28.2*mm" posY="57.1*mm" rotZ="0*deg"/>
-          <module posX="28.2*mm" posY="103.1*mm" rotZ="0*deg"/>
-          <module posX="63.8*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="63.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-91.8*mm" posY="46*mm" rotZ="0*deg"/>
-          <module posX="-91.8*mm" posY="0*mm" rotZ="0*deg"/>
-          <module posX="-91.8*mm" posY="-46*mm" rotZ="0*deg"/>
-          <module posX="-61.8*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-61.8*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-31.8*mm" posY="-51.25*mm" rotZ="180*deg"/>
-          <module posX="-31.8*mm" posY="-97.25*mm" rotZ="180*deg"/>
-          <module posX="-1.8*mm" posY="-57.1*mm" rotZ="180*deg"/>
-          <module posX="-1.8*mm" posY="-103.1*mm" rotZ="180*deg"/>
-          <module posX="28.2*mm" posY="-57.1*mm" rotZ="180*deg"/>
-          <module posX="28.2*mm" posY="-103.1*mm" rotZ="180*deg"/>
+          <module posX="-61.799*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-61.799*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-31.799*mm" posY="51.248*mm" rotZ="0*deg"/>
+          <module posX="-31.799*mm" posY="97.248*mm" rotZ="0*deg"/>
+          <module posX="-1.799*mm" posY="57.099*mm" rotZ="0*deg"/>
+          <module posX="-1.799*mm" posY="103.099*mm" rotZ="0*deg"/>
+          <module posX="28.201*mm" posY="51.703*mm" rotZ="0*deg"/>
+          <module posX="28.201*mm" posY="97.703*mm" rotZ="0*deg"/>
+          <module posX="58.201*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="58.201*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="58.201*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="58.201*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-91.799*mm" posY="46.000*mm" rotZ="0*deg"/>
+          <module posX="-91.799*mm" posY="0.000*mm" rotZ="0*deg"/>
+          <module posX="-91.799*mm" posY="-46.000*mm" rotZ="0*deg"/>
+          <module posX="-61.799*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-61.799*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-31.799*mm" posY="-51.248*mm" rotZ="180*deg"/>
+          <module posX="-31.799*mm" posY="-97.248*mm" rotZ="180*deg"/>
+          <module posX="-1.799*mm" posY="-57.099*mm" rotZ="180*deg"/>
+          <module posX="-1.799*mm" posY="-103.099*mm" rotZ="180*deg"/>
+          <module posX="28.201*mm" posY="-51.703*mm" rotZ="180*deg"/>
+          <module posX="28.201*mm" posY="-97.703*mm" rotZ="180*deg"/>
         </module_positions>
       </layer>
       <layer id="7" station="4" side="back">
@@ -311,33 +331,35 @@
         <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
-        <component ref="B0SupportDisk">
+        <component ref="B0SupportPlate4">
           <position x="0*cm" y="0*cm" z="0*mm"/>
         </component>
         <module_positions>
-          <module posX="-54.09*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-84.09*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-54.09*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-84.09*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-24.09*mm" posY="62.79*mm" rotZ="0*deg"/>
-          <module posX="5.91*mm" posY="64.39*mm" rotZ="0*deg"/>
-          <module posX="35.91*mm" posY="64.39*mm" rotZ="0*deg"/>
-          <module posX="-24.09*mm" posY="108.79*mm" rotZ="0*deg"/>
-          <module posX="5.91*mm" posY="110.39*mm" rotZ="0*deg"/>
-          <module posX="35.91*mm" posY="110.39*mm" rotZ="0*deg"/>
-          <module posX="71.31*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="71.31*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-54.09*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-84.09*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-54.09*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-84.09*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-24.09*mm" posY="-62.79*mm" rotZ="180*deg"/>
-          <module posX="5.91*mm" posY="-64.39*mm" rotZ="180*deg"/>
-          <module posX="35.91*mm" posY="-64.39*mm" rotZ="180*deg"/>
-          <module posX="-24.09*mm" posY="-108.79*mm" rotZ="180*deg"/>
-          <module posX="5.91*mm" posY="-110.39*mm" rotZ="180*deg"/>
-          <module posX="35.91*mm" posY="-110.39*mm" rotZ="180*deg"/>
-          <module posX="-114.09*mm" posY="0*mm" rotZ="0*deg"/>
+          <module posX="-54.086*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-84.086*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-54.086*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-84.086*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-24.086*mm" posY="62.789*mm" rotZ="0*deg"/>
+          <module posX="5.914*mm" posY="64.386*mm" rotZ="0*deg"/>
+          <module posX="35.914*mm" posY="53.554*mm" rotZ="0*deg"/>
+          <module posX="-24.086*mm" posY="108.789*mm" rotZ="0*deg"/>
+          <module posX="5.914*mm" posY="110.386*mm" rotZ="0*deg"/>
+          <module posX="35.914*mm" posY="99.554*mm" rotZ="0*deg"/>
+          <module posX="65.914*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="65.914*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="65.914*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="65.914*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-54.086*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-84.086*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-54.086*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-84.086*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-24.086*mm" posY="-62.789*mm" rotZ="180*deg"/>
+          <module posX="5.914*mm" posY="-64.386*mm" rotZ="180*deg"/>
+          <module posX="35.914*mm" posY="-53.554*mm" rotZ="180*deg"/>
+          <module posX="-24.086*mm" posY="-108.789*mm" rotZ="180*deg"/>
+          <module posX="5.914*mm" posY="-110.386*mm" rotZ="180*deg"/>
+          <module posX="35.914*mm" posY="-99.554*mm" rotZ="180*deg"/>
+          <module posX="-114.086*mm" posY="0.000*mm" rotZ="0*deg"/>
         </module_positions>
       </layer>
       <layer id="8" station="4" side="front">
@@ -346,29 +368,29 @@
         <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
         <module_positions>
-          <module posX="-69.09*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="-69.09*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-39.09*mm" posY="54.88*mm" rotZ="0*deg"/>
-          <module posX="-39.09*mm" posY="100.88*mm" rotZ="0*deg"/>
-          <module posX="-9.09*mm" posY="64.39*mm" rotZ="0*deg"/>
-          <module posX="-9.09*mm" posY="110.39*mm" rotZ="0*deg"/>
-          <module posX="20.91*mm" posY="64.39*mm" rotZ="0*deg"/>
-          <module posX="20.91*mm" posY="110.39*mm" rotZ="0*deg"/>
-          <module posX="54.09*mm" posY="23*mm" rotZ="0*deg"/>
-          <module posX="50.91*mm" posY="69*mm" rotZ="0*deg"/>
-          <module posX="-99.09*mm" posY="46*mm" rotZ="0*deg"/>
-          <module posX="-99.09*mm" posY="0*mm" rotZ="0*deg"/>
-          <module posX="-99.09*mm" posY="-46*mm" rotZ="0*deg"/>
-          <module posX="-69.09*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="-69.09*mm" posY="-69*mm" rotZ="180*deg"/>
-          <module posX="-39.09*mm" posY="-54.88*mm" rotZ="180*deg"/>
-          <module posX="-39.09*mm" posY="-100.88*mm" rotZ="180*deg"/>
-          <module posX="-9.09*mm" posY="-64.39*mm" rotZ="180*deg"/>
-          <module posX="-9.09*mm" posY="-110.39*mm" rotZ="180*deg"/>
-          <module posX="20.91*mm" posY="-64.39*mm" rotZ="180*deg"/>
-          <module posX="20.91*mm" posY="-110.39*mm" rotZ="180*deg"/>
-          <module posX="54.09*mm" posY="-23*mm" rotZ="180*deg"/>
-          <module posX="50.91*mm" posY="-69*mm" rotZ="180*deg"/>
+          <module posX="-69.086*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="-69.086*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="-39.086*mm" posY="54.884*mm" rotZ="0*deg"/>
+          <module posX="-39.086*mm" posY="100.884*mm" rotZ="0*deg"/>
+          <module posX="-9.086*mm" posY="64.386*mm" rotZ="0*deg"/>
+          <module posX="-9.086*mm" posY="110.386*mm" rotZ="0*deg"/>
+          <module posX="20.914*mm" posY="62.319*mm" rotZ="0*deg"/>
+          <module posX="20.914*mm" posY="108.319*mm" rotZ="0*deg"/>
+          <module posX="50.914*mm" posY="23.000*mm" rotZ="0*deg"/>
+          <module posX="50.914*mm" posY="69.000*mm" rotZ="0*deg"/>
+          <module posX="50.914*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="50.914*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-99.086*mm" posY="46.000*mm" rotZ="0*deg"/>
+          <module posX="-99.086*mm" posY="0.000*mm" rotZ="0*deg"/>
+          <module posX="-99.086*mm" posY="-46.000*mm" rotZ="0*deg"/>
+          <module posX="-69.086*mm" posY="-23.000*mm" rotZ="180*deg"/>
+          <module posX="-69.086*mm" posY="-69.000*mm" rotZ="180*deg"/>
+          <module posX="-39.086*mm" posY="-54.884*mm" rotZ="180*deg"/>
+          <module posX="-39.086*mm" posY="-100.884*mm" rotZ="180*deg"/>
+          <module posX="-9.086*mm" posY="-64.386*mm" rotZ="180*deg"/>
+          <module posX="-9.086*mm" posY="-110.386*mm" rotZ="180*deg"/>
+          <module posX="20.914*mm" posY="-62.319*mm" rotZ="180*deg"/>
+          <module posX="20.914*mm" posY="-108.319*mm" rotZ="180*deg"/>
         </module_positions>
       </layer>
     </detector>
