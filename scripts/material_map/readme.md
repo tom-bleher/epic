@@ -130,16 +130,17 @@ This takes about two hours, and >10GB disk space.
 eicrecon -Pacts:MaterialMap=/your_path/material-map.cbor
 ```
 
-The nominal IP6 configurations select the realistic B0 map through `material_map`
+Both nominal IP6 configurations explicitly select 5×41 optics and the realistic B0 map through `material_map`
 and `material_map_url` in `configurations/ip6_extended.yml` and
 `configurations/ip6_extended_5x41.yml`. The usual file loader downloads a
 content-specific cache filename. The artifact, checksum, validation and provenance
-are published in the immutable [fork release](https://github.com/tom-bleher/epic/releases/tag/b0-ip6-material-20260906-10f369975a72).
-The 822,627-byte map has SHA-256
-`10f369975a72c82f91b3c8bffde9ff0dcc5a524045c6d7baa4be91a6af6fdcd3`.
+are published in the immutable [fork release](https://github.com/tom-bleher/epic/releases/tag/b0-ip6-material-20260906-cbc0605e892b).
+The 823,552-byte map has SHA-256
+`cbc0605e892b7777db3c818a51e56c51ddb19e3f7c91e813c110aeab1e1e691c`.
 Keep it separate from the shared full-detector map and from maps for simplified
 or vacuum geometries. New fork maps require a new release and matching YAML URL;
 never replace an already published artifact.
+The simplified B0 comparison uses its own [validated map](https://github.com/tom-bleher/epic/releases/tag/b0-ip6-simplified-material-20260906-bc8d86fe2fb2).
 
 ## Update the official material map
 1. You can either generate the map locally as described above, or download the artifact ```material_map``` from a PR CI.

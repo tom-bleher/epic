@@ -1,7 +1,7 @@
 ebeam: 5
 pbeam: 41
-material_map: "calibrations/materials-map-ip6-extended-10f369975a72.cbor"
-material_map_url: "https://github.com/tom-bleher/epic/releases/download/b0-ip6-material-20260906-10f369975a72/materials-map-ip6-extended.cbor"
+material_map: "calibrations/materials-map-ip6-extended-cbc0605e892b.cbor"
+material_map_url: "https://github.com/tom-bleher/epic/releases/download/b0-ip6-material-20260906-cbc0605e892b/materials-map-ip6-extended.cbor"
 features:
   beampipe:
   tracking:
