@@ -50,6 +50,9 @@
     <include ref="${DETECTOR_PATH}/compact/far_backward/definitions.xml" />
     <include ref="${DETECTOR_PATH}/compact/version.xml"/>
     <include ref="${DD4hepINSTALL}/DDDetectors/compact/detector_types.xml"/>
+{% if material_map | default('', true) %}
+    <constant name="material-map" value="{{ material_map | e }}" type="string"/>
+{% endif -%}
   </define>
 
 
@@ -148,6 +151,9 @@
   {% for tracker in features['tracking'] -%}
   <include ref="${DETECTOR_PATH}/compact/tracking/{{ tracker }}.xml"/>
   {% endfor -%}
+{% if 'definitions_craterlake' in features['tracking'] and not (material_map | default('', true)) %}
+  <include ref="${DETECTOR_PATH}/compact/tracking/material_map.xml"/>
+{% endif -%}
 {% endif -%}
 
 {% if 'pid' in features %}
@@ -203,4 +209,13 @@
   {% endfor -%}
 {% endif -%}
 
+{% if material_map_url | default('', true) %}
+  <plugins>
+    <plugin name="epic_FileLoader">
+      <arg value="cache:$DETECTOR_CACHE:/opt/detector"/>
+      <arg value="file:{{ material_map | e }}"/>
+      <arg value="url:{{ material_map_url | e }}"/>
+    </plugin>
+  </plugins>
+{% endif -%}
 </lccdd>
