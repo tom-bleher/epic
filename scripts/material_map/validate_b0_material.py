@@ -385,7 +385,12 @@ def main():
         "For matched Geant4 truth, mean absolute per-ray difference from TGeo through the "
         "last sensor must be <=max(0.01 X0, 5% of mean TGeo truth). "
         "Engineering tolerances, not ACTS standards.")
-    return analyze(json.loads(probe_path.read_text()), tree, args.output, provenance)
+    probe = json.loads(probe_path.read_text())
+    if len(probe["rays"]) < args.sample_size:
+        raise RuntimeError(f"Only {len(probe['rays'])} accepted rays for requested "
+                           f"sample of {args.sample_size}; increase the candidate/input limits")
+    provenance["requested_sample_size"] = args.sample_size
+    return analyze(probe, tree, args.output, provenance)
 
 
 if __name__ == "__main__":
