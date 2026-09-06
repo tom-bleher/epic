@@ -45,6 +45,7 @@ include(GNUInstallDirs)
 
 # Dependencies
 find_package(DD4hep 1.27 REQUIRED COMPONENTS DDCore DDRec)
+option(EPIC_BUILD_DDG4_PLUGINS "Build ePIC DDG4 sensitive-action plugins" OFF)
 find_package(fmt REQUIRED)
 find_package(IRT2 2.1.1)
 
@@ -64,6 +65,14 @@ dd4hep_add_plugin(${a_lib_name}
 target_link_libraries(${a_lib_name}
   PUBLIC DD4hep::DDCore DD4hep::DDRec fmt::fmt
   )
+
+if(EPIC_BUILD_DDG4_PLUGINS)
+  find_package(DD4hep 1.35 REQUIRED COMPONENTS DDG4)
+  dd4hep_add_plugin(${a_lib_name}DDG4
+    SOURCES src/sim/Geant4TrackerWeightedPlacementSD.cpp
+    USES DD4hep::DDG4
+    )
+endif()
 set(WITH_IRT1_SUPPORT TRUE CACHE STRING "Enable constant definitions used by EICrecon integration in IRT1")
 if(WITH_IRT1_SUPPORT)
     target_compile_definitions(${a_lib_name} PRIVATE WITH_IRT1_SUPPORT)
