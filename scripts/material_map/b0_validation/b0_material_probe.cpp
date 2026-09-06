@@ -182,6 +182,9 @@ void remap(const Acts::TrackingGeometry& geometry,
       if (kept < length)
         ++clippedSteps;
       step.materialSlab = Acts::MaterialSlab(step.materialSlab.material(), kept);
+      // Geant4 records the pre-step point; nearest-surface assignment needs the
+      // centroid of the retained material, including a partially clipped step.
+      step.position += 0.5 * kept * step.direction.normalized();
       ray.second.materialInteractions.push_back(std::move(step));
     }
     const auto [assigned, unassigned] = mapper.mapMaterial(*state, gctx, mctx, ray, options);
@@ -193,6 +196,25 @@ void remap(const Acts::TrackingGeometry& geometry,
     ++processed;
     if (processed % 100000 == 0)
       std::cout << "processed=" << processed << std::endl;
+  }
+  Json occupancy          = Json::array();
+  const auto& accumulated = dynamic_cast<const Acts::BinnedSurfaceMaterialAccumulator::State&>(
+      *state->surfaceMaterialAccumulatorState);
+  for (const auto& [id, surface] : accumulated.accumulatedMaterial) {
+    std::vector<unsigned> counts;
+    for (const auto& row : surface.accumulatedMaterial())
+      for (const auto& bin : row)
+        counts.push_back(bin.totalAverage().second);
+    std::sort(counts.begin(), counts.end());
+    occupancy.push_back({{"geometry_id", id.value()},
+                         {"volume", id.volume()},
+                         {"layer", id.layer()},
+                         {"approach", id.approach()},
+                         {"bins", counts.size()},
+                         {"unvisited_bins", std::count(counts.begin(), counts.end(), 0)},
+                         {"min_tracks", counts.front()},
+                         {"median_tracks", counts[counts.size() / 2]},
+                         {"max_tracks", counts.back()}});
   }
   Acts::MaterialMapJsonConverter converter({}, Acts::Logging::WARNING);
   const double conservationResidual = keptX0 - assignedX0 - unassignedX0;
@@ -218,9 +240,11 @@ void remap(const Acts::TrackingGeometry& geometry,
                    unassignedWithoutSurfacesX0},
                   {"conservation_residual", conservationResidual},
                   {"composition_branches_present", hasComposition},
+                  {"surface_bin_occupancy", occupancy},
                   {"policy",
                    "Retain Geant4 steps through first exit from highest IP6 tracking volume; clip "
-                   "crossing step; native ACTS47 assignment and empty-bin correction"}})
+                   "crossing step; assign retained slab centroid with native ACTS47 assignment "
+                   "and empty-bin correction"}})
                 .dump(2)
          << '\n';
   report.flush();

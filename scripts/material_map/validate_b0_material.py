@@ -66,6 +66,52 @@ def geometry_hashes(xml):
     return dict(sorted(files.items()))
 
 
+def verify_recording(truth, entries, xml, includes, directions_only=False):
+    """Check ROOT identity and compact XML; compiled geometry needs a separate audit."""
+    with truth.open("rb") as stream:
+        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    result = {"root_sha256": digest, "material_geometry_verified": False,
+              "geometry_verification_scope": "Recursive compact XML hashes; excludes compiled plugins and external resources"}
+    if directions_only:
+        return result
+    sidecar = Path(str(truth) + ".json")
+    if not sidecar.is_file():
+        raise RuntimeError("Material truth requires the record_b0_material.py JSON sidecar; "
+                           "record a matched scan or use --directions-only for a TGeo audit")
+    raw = sidecar.read_bytes()
+    recording = json.loads(raw)
+    if tuple(recording.get("acts", ())) != (47, 7, 0):
+        raise RuntimeError("Recorded material must identify ACTS 47.7.0")
+    if recording.get("output_sha256") != digest:
+        raise RuntimeError("Recorded material ROOT checksum differs from its provenance")
+    if recording.get("recorded_entries") != entries:
+        raise RuntimeError("Recorded material entry count differs from its provenance")
+
+    def relative_hashes(hashes, entrypoint):
+        entrypoint = Path(entrypoint).resolve()
+        normalized = {}
+        for filename, checksum in hashes.items():
+            path = Path(filename)
+            if path == entrypoint:
+                key = "<entrypoint>"
+            elif path.is_relative_to(entrypoint.parent):
+                key = str(path.relative_to(entrypoint.parent))
+            else:
+                key = str(path)
+            normalized[key] = checksum
+        return normalized
+
+    recorded = relative_hashes(recording["geometry_include_sha256"], recording["xml"])
+    current = relative_hashes(includes, xml)
+    if recorded != current:
+        different = sorted(key for key in recorded.keys() | current.keys()
+                           if recorded.get(key) != current.get(key))
+        raise RuntimeError(f"Recorded material geometry differs in compact files: {different}")
+    result.update(material_geometry_verified=True, sidecar=str(sidecar.resolve()),
+                  sidecar_sha256=hashlib.sha256(raw).hexdigest(), recording=recording)
+    return result
+
+
 def prepare(tree, args):
     arrays = tree.arrays(["v_x", "v_y", "v_z", "v_px", "v_py", "v_pz", "v_eta"],
                          entry_start=args.first_input_entry,
@@ -140,19 +186,34 @@ def analyze(probe, tree, output, provenance):
     # Binned slabs redistribute thin material, so enforce aggregate closure and
     # independently reject large per-ray material excesses between measurements.
     closure = {}
-    for name in ("before_first", "between_first_last"):
+    for name in ("before_first", "between_first_last", "last_to_envelope_exit"):
         actual = np.asarray(samples[name]["navigation"])
         expected = np.asarray(samples[name]["tgeo"])
-        mean_ratio = float(actual.mean() / expected.mean())
+        mean_ratio = float(actual.mean() / expected.mean()) if expected.mean() > 0 else None
         catastrophic = (actual > 5. * expected) & (actual - expected > .1)
+        # Unpopulated fine bins can hide behind an acceptable aggregate mean.
+        missing = (actual <= 1e-6) & (expected > .01)
+        mean_ok = (abs(actual.mean() - expected.mean()) <= max(.001, .25 * expected.mean()))
         closure[name] = {"mean_map_over_truth": mean_ratio,
-                         "mean_within_25_percent": abs(mean_ratio - 1.) <= .25,
+                         "mean_within_25_percent_or_0p001_X0": bool(mean_ok),
+                         "rays_with_zero_map_and_truth_over_0p01_X0":
+                             [rays[i]["entry"] for i in np.flatnonzero(missing)],
                          "rays_over_5_times_truth_with_excess_over_0p1_X0":
                              [rays[i]["entry"] for i in np.flatnonzero(catastrophic)]}
-    material_ok = (all(value["mean_within_25_percent"] for value in closure.values()) and
-                   not closure["between_first_last"]["rays_over_5_times_truth_with_excess_over_0p1_X0"])
+    material_ok = (
+        all(value["mean_within_25_percent_or_0p001_X0"] and
+            not value["rays_with_zero_map_and_truth_over_0p01_X0"] for value in closure.values()) and
+        all(not closure[name]["rays_over_5_times_truth_with_excess_over_0p1_X0"]
+            for name in ("between_first_last", "last_to_envelope_exit")))
     g4, tg = np.array(crosscheck["geant4"]), np.array(crosscheck["tgeo"])
     delta = tg - g4
+    g4_last = np.asarray(crosscheck["geant4_through_last"])
+    tg_last = np.asarray(crosscheck["tgeo_through_last"])
+    # TGeo includes dilute air skipped by the Geant4 recording. Allow that
+    # small absolute budget without accepting large conversion discrepancies.
+    truth_difference = float(np.mean(np.abs(g4_last - tg_last)))
+    truth_tolerance = max(.01, .05 * float(tg_last.mean()))
+    truth_ok = None if directions_only else truth_difference <= truth_tolerance
     preflight = probe["preflight"]
     preflight_ok = (preflight["duplicate_detector_ids"] == 0 and
                     all(layer["planar_approaches"] == layer["mapped_planar_approaches"] and
@@ -162,6 +223,7 @@ def analyze(probe, tree, output, provenance):
               "candidate_rays_examined": probe["examined"], "preflight": preflight,
               "geometry_preflight_passed": preflight_ok,
               "material_closure_passed": material_ok, "material_closure": closure,
+              "geant4_tgeo_closure_passed": truth_ok,
               "navigation_failures": navigation_failures, "missing_sensor_intersections": missing_hits,
               "statistics_X_over_X0": statistics,
               "geant4_tgeo_crosscheck_z_below_8m": {
@@ -171,24 +233,29 @@ def analyze(probe, tree, output, provenance):
                   "p95_absolute_difference": float(np.percentile(np.abs(delta), 95))},
               "geant4_tgeo_crosscheck_through_last_sensor": {
                   "geant4_mean": float(np.mean(crosscheck["geant4_through_last"])),
-                  "tgeo_mean": float(np.mean(crosscheck["tgeo_through_last"]))},
+                  "tgeo_mean": float(np.mean(crosscheck["tgeo_through_last"])),
+                  "mean_absolute_difference": truth_difference,
+                  "tolerance_X0": truth_tolerance},
               "largest_physical_material_contributions_after_last_hit":
                   [{"path": path, "mean_X_over_X0": value / len(rays)}
                    for path, value in sorted(downstream_material.items(), key=lambda pair: -pair[1])[:20]],
               "rays": ray_reports}
-    (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     if directions_only:
         report["geant4_tgeo_crosscheck_z_below_8m"] = None
         report["geant4_tgeo_crosscheck_through_last_sensor"] = None
-        (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
+    (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     plot(samples, rays, output / "assets" / "b0_material_closure.pdf", provenance)
     for name, stats in statistics.items():
         print(name, "mean X/X0", {kind: round(stat["mean"], 6) for kind, stat in stats.items()})
     print("Geant4/TGeo cross-check", report["geant4_tgeo_crosscheck_z_below_8m"])
     print("Geometry preflight:", preflight_ok, "navigation errors:", len(navigation_failures),
           "rays missing sensor intersections:", len(missing_hits))
-    print("Material closure:", material_ok, closure)
-    return 0 if preflight_ok and material_ok and not navigation_failures and not missing_hits else 1
+    print("Material closure:", material_ok,
+          {name: {key: len(value) if isinstance(value, list) else value
+                  for key, value in criteria.items()} for name, criteria in closure.items()})
+    print("Geant4/TGeo closure:", truth_ok)
+    return 0 if (preflight_ok and material_ok and truth_ok is not False and
+                 not navigation_failures and not missing_hits) else 1
 
 
 def plot(samples, rays, target, provenance):
@@ -250,6 +317,9 @@ def main():
     tree = uproot.open(args.truth)["material-tracks"]
     if args.first_input_entry >= tree.num_entries:
         p.error("Validation range starts beyond the recorded tree")
+    includes = geometry_hashes(args.xml)
+    recording = verify_recording(args.truth, tree.num_entries, args.xml, includes,
+                                 args.directions_only)
     training = None
     binning_map = {"path": str(args.material_map.resolve()),
                    "sha256": hashlib.sha256(args.material_map.read_bytes()).hexdigest()}
@@ -264,11 +334,15 @@ def main():
                            stdout=log, stderr=subprocess.STDOUT, check=True)
         training = json.loads(Path(str(candidate) + ".json").read_text())
         training["binning_map"] = binning_map
+        training["recorded_geant4_sha256"] = recording["root_sha256"]
         Path(str(candidate) + ".json").write_text(json.dumps(training, indent=2) + "\n")
         args.material_map = candidate
         args.first_input_entry = max(args.first_input_entry, args.training_entries)
     elif Path(str(args.material_map) + ".json").is_file():
         training = json.loads(Path(str(args.material_map) + ".json").read_text())
+        if training.get("recorded_geant4_sha256") == recording["root_sha256"]:
+            args.first_input_entry = max(args.first_input_entry,
+                                         training["first_entry"] + training["entries"])
     rays = prepare(tree, args)
     input_path, probe_path = args.output / "rays.json", args.output / "probe.json"
     input_path.write_text(json.dumps(rays) + "\n")
@@ -277,7 +351,6 @@ def main():
                         str(args.material_map.resolve()), str(input_path.resolve()),
                         str(probe_path.resolve()), str(args.sample_size), str(args.padding_mm)],
                        stdout=log, stderr=subprocess.STDOUT, check=True)
-    includes = geometry_hashes(args.xml)
     field_configs = [Path(path).name for path in includes if re.fullmatch(r"beamline_\d+x\d+\.xml", Path(path).name)]
     if len(field_configs) != 1:
         raise RuntimeError(f"Expected one beam-field configuration, found {field_configs}")
@@ -291,6 +364,7 @@ def main():
                   "recorded_geant4": str(args.truth.resolve()),
                   "recorded_geant4_size": args.truth.stat().st_size,
                   "recorded_geant4_entries": tree.num_entries,
+                  "recording_provenance": recording,
                   "validation_first_input_entry": args.first_input_entry,
                   "padding_mm": args.padding_mm,
                   "acceptance": "4 < eta < 6; ray intersects sensitive sensors in at least 3 B0 stations",
@@ -301,11 +375,16 @@ def main():
     provenance["training"] = training
     if training:
         provenance["training_validation_disjoint"] = (
-            args.first_input_entry >= training["first_entry"] + training["entries"])
+            args.first_input_entry >= training["first_entry"] + training["entries"]
+            if training.get("recorded_geant4_sha256") == recording["root_sha256"] else None)
     provenance["training_binning_map"] = training.get("binning_map") if training else None
     provenance["material_closure_criteria"] = (
-        "Mean mapped/truth within 25% before first and between first/last sensors; "
-        "no between-sensor ray with >5x truth and >0.1 X0 excess. Engineering tolerances, not ACTS standards.")
+        "Mean mapped/truth within max(25% of truth, 0.001 X0) before first, between sensors, "
+        "and from last sensor to tracking-volume exit; no zero-map ray with truth >0.01 X0; "
+        "no between-sensor or last-to-exit ray with >5x truth and >0.1 X0 excess. "
+        "For matched Geant4 truth, mean absolute per-ray difference from TGeo through the "
+        "last sensor must be <=max(0.01 X0, 5% of mean TGeo truth). "
+        "Engineering tolerances, not ACTS standards.")
     return analyze(json.loads(probe_path.read_text()), tree, args.output, provenance)
 
 

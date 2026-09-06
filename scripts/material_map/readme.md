@@ -20,7 +20,7 @@ Start with the small default sample before increasing the recorded training rang
 
 ```sh
 python scripts/material_map/validate_b0_material.py \
-  --truth build/material_map_refresh/geant4_material_tracks.root \
+  --truth build/b0_acts47_validation/geant4_material_tracks.root \
   --probe build/b0_acts47_validation/bin/b0-material-probe \
   --map calibrations/materials-map-ip6-extended.cbor \
   --output build/b0_acts47_validation/pilot \
@@ -29,10 +29,14 @@ python scripts/material_map/validate_b0_material.py \
 
 Use absolute paths when running outside this checkout. Run long jobs in `tmux`
 and check the recorded exit code. The remapper consumes a matched Geant4 scan.
-Verify the scan's geometry provenance before reuse. The default full-map example
-uses 4,500,000 recorded entries for training and holds out the remaining entries:
-add `--training-entries 4500000 --sample-size 1000 --max-input-entries 318623
---candidate-limit 40000` for the existing 4,818,623-entry scan. The held-out sample
+The validator requires the recording sidecar and checks its ROOT checksum, ACTS
+version, counts and complete compact include hashes before mapping or certifying
+Geant4 truth. Relocating an otherwise identical installed geometry is supported.
+The XML check does not cover compiled geometry plugins or external resources;
+retain a frozen install manifest and verify its plugin checksums separately.
+For a scan of 5,000,000 geantinos, use 4,500,000 recorded entries for training and hold out the
+remaining entries: add `--training-entries 4500000 --sample-size 1000
+--max-input-entries 500000 --candidate-limit 40000`. The held-out sample
 contains rays with `4 < eta < 6` intersecting sensitive sensors in at least three
 stations; these are geometrical geantino rays, not reconstructed protons.
 
@@ -57,8 +61,11 @@ entry ranges. Geant4 recording uses one thread because its global state is not
 safe to share across concurrent events.
 
 The remapper clips each physical Geant4 step at the ray's first exit from the
-**highest ACTS tracking volume**, then uses native ACTS material assignment and
-empty-bin correction. This retains upstream material such as the B0 entrance
+**highest ACTS tracking volume**, places the retained slab at its midpoint,
+then uses native ACTS material assignment and empty-bin correction. Geant4's
+recorded position is the pre-step point; assigning that point directly can
+move a thick support slab to the wrong side of a sensor. This retains upstream
+material such as the B0 entrance
 window and the material from the final sensor to the tracking-volume exit.
 It prevents remote calorimeter/magnet material from being projected backwards
 onto B0 surfaces. The supported rays start inside that volume, normally at the IP.
@@ -71,9 +78,8 @@ X0, L0, atomic mass, charge, and mass density.
 Validation independently compares direct surface intersections, ACTS navigation,
 and current DD4hep/TGeo material for exactly the same rays. Recorded Geant4 steps
 cross-check TGeo through B0; their `mat_z` is a **pre-step point**, so historical
-`mat_sz`/`mat_ez` midpoint-derived branches are not used. The 18×275 and 5×41
-configurations differ in downstream Roman-pot positions, so the old scan is not
-used as whole-detector 5×41 truth. The current TGeo geometry supplies that truth.
+`mat_sz`/`mat_ez` midpoint-derived branches are not used. A scan from the 18×275
+configuration cannot certify the 5×41 geometry; record the intended configuration.
 For an initial audit when a matching scan is unavailable, `--directions-only`
 uses another scan solely for its origins and directions and compares the map
 with the loaded TGeo geometry. It explicitly omits Geant4 material cross-checks
@@ -81,12 +87,18 @@ and cannot be used with `--remap`.
 
 `report.json` records geometry fingerprints, map checksum, training/validation
 ranges, per-ray material intervals, navigation failures, and material closure.
+The remap sidecar also reports per-surface bin occupancy. Finer bins require
+enough training rays; a formally present material map can still contain empty
+bins inside the accepted tracking region.
 Exit zero requires real mapped material on every intended B0 approach disc,
 unique sensitive volume IDs, contained sensor/approach footprints, no missing
 sensor intersections, and material closure. The declared engineering tolerances
-are mean mapped/truth within 25% before the first sensor and between the first
-and last sensors, with no between-sensor ray exceeding five times truth by more
-than 0.1 X0. These are validation thresholds, not an ACTS standard.
+are mean mapped/truth within 25% (or 0.001 X0 absolute for near-zero intervals)
+before the first sensor, between sensors, and from the last sensor to the
+tracking-volume exit. No interval may have a ray with mapped material at most
+0.000001 X0 while truth exceeds 0.01 X0. Between-sensor and final intervals must
+also contain no ray exceeding five times truth by more than 0.1 X0.
+These are validation thresholds, not an ACTS standard.
 
 The candidate stays in the work directory as `candidate.cbor`; generation does
 not install it. Inspect `assets/b0_material_closure.pdf` and the report before
