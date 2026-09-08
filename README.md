@@ -45,6 +45,28 @@ To load the geometry, you can use the scripts in the `install` directory:
 source install/bin/thisepic.sh
 ```
 
+For B0 simulation with placement-aware weighted hits, build the optional DDG4
+plugin (requires DD4hep 1.35 or newer with DDG4):
+```bash
+cmake -B build -S . -DCMAKE_INSTALL_PREFIX=install -DEPIC_BUILD_DDG4_PLUGINS=ON
+cmake --build build --parallel
+cmake --install build
+source install/bin/thisepic.sh epic_ip6_extended
+npsim --steeringFile scripts/b0_placement_steering.py \
+  --compactFile "$DETECTOR_PATH/$DETECTOR_CONFIG.xml" \
+  --inputFiles input.hepmc3 --outputFile sim.edm4hep.root --numberOfEvents 10
+```
+The option remains off for geometry-only builds and older DD4hep installations.
+Use input generated with the intended beam energies and optics (5×41 GeV for
+the B0 setup); the steering file only selects the sensitive action.
+
+`scripts/test_ACTS.cxx` uses a 5 mm ACTS volume-envelope padding in z, matching
+the B0 reconstruction default. Its optional second argument must match any
+`acts:LayerEnvelopeZ` override. `bin/acts_geo_check` checks all B0 planar approach
+discs against both axial volume boundaries using their actual transformed
+extents, and requires at least 0.5 mm clearance. This is an axial boundary check;
+it does not replace sensor containment, radial navigation, or material validation.
+
 ### Adding/changing detector geometry
 
 Hint: **Use the CI/CD pipelines**.
