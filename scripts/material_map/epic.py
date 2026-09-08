@@ -17,7 +17,10 @@ def getDetector(
     logLevel=acts.logging.WARNING,
 ):
     customLogLevel = acts.examples.defaultLogging(logLevel=logLevel)
-    logger = acts.getDefaultLogger("epic.getDetector", logLevel)
+    # eic_xl-26.04 container ACTS python has no acts.getDefaultLogger (added
+    # in the 45.3.0 script bump); use the pre-bump logger, as in the fleet2
+    # trees whose map generation succeeds in this container.
+    logger = acts.logging.getLogger("epic.getDetector")
 
     matDeco = None
     if len(jsonFile)>0:

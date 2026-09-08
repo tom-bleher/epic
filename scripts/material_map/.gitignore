@@ -3,3 +3,5 @@ Surfaces/
 Validation/
 calibrations/
 *.json
+material-map.cbor
+plots/

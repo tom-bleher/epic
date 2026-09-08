@@ -1,5 +1,5 @@
 # Material Map for ACTS
-The material map needs to be updated from the default version in calibration/ when __ANY__ geometry or material thickness is changed within the tracking volume, even the change happens on a non-sensitive structure.
+The material map must be updated when **any** geometry or material thickness changes inside the tracking volume, including changes to non-sensitive or B0 structures.
 
 ## B0 validation and remapping with ACTS 47.7
 
@@ -109,21 +109,68 @@ the legacy `scripts/refresh_local_material_map.sh` writes the generic map and
 does not supply this B0 validation. Do not copy its unbounded output over
 `materials-map-ip6-extended.cbor`.
 
-## Generate a new map with auto script
-Steps:
-* geantino scan to record material from dd4hep simulation
-* map materials on to selected sets of ACTS surfaces and boundaries. Default: use all entrance and exit surfaces of tracking layers with grid size set in xml file ("layer_material"...)
-* result validation and plots.
+## ACTS 47.7 reduced IP6 campaign
 
-pre-requiests:
-1. more than 10 GB disk space, and two hours of time.
-2. set up your ```$DETECTOR_PATH``` and install epic.
+In ACTS 47.7, `run_material_map_validation.sh` selects the native B0 workflow
+instead of downloading incompatible ACTS 45 scripts. Source the current local
+`epic_ip6_extended` installation and an ACTS 47.7 build with Geant4 examples:
 
-to run:
-```./run_material_map_validation.sh --nevents 1000 --nparticles 5000 ```
-See comments for details.
+```sh
+export ACTS_SOURCE_DIR=/path/to/acts-v47.7.0
+./run_material_map_validation.sh --nevents 1000 --nparticles 5000 \
+  --work-dir /path/to/new-campaign
+```
 
-This takes about two hours, and >10GB disk space.
+This records eta from -7 to 7, trains on the first 90% of recorded entries, and
+compares regenerated/current maps on disjoint B0-accepted rays from the remaining
+10%. `--validation-entries` can reserve a later, untouched range for final testing
+after choosing binning. `--recording` reuses an existing recording only after its
+checksums, compact geometry, counts and angular range pass provenance checks.
+Default mapping uses current XML-declared prototypes, including new passive
+layers; it does not reuse identifiers from an old material map. An explicit
+`--binning-map geometry-map.json` can override binning after exporting the current
+geometry. Retain that configuration and compare alternatives on a selection
+sample, reserving a separate range for the final test. Navigation layers are
+never physical mapping targets.
+New recordings also fingerprint the actual loaded ePIC construction library and
+reject geometry changes during recording. Older sidecars explicitly retain their
+narrower XML-only verification scope.
+
+The configured XML `material-map` constant selects the comparison artifact;
+`calibrations/materials-map.cbor` may be a different, full-detector map. Outputs
+include `regenerated/candidate.cbor`, bin occupancy, paired material/navigation
+reports, PDF closure plots and `campaign.json`. Existing output directories are
+never overwritten. Review the evidence before installing or publishing a map.
+The position PDF and upstream material moments check where the radiation lengths
+are placed: correct integrated material alone cannot validate scattering lever
+arms or position–direction covariance.
+This reduced IP6 workflow does not produce the shared full-detector map below.
+
+## Generate and validate the shared map
+
+The official shared map must be generated with `epic_craterlake_material_map`. This purpose-built configuration contains the full central tracker and B0. Do not generate the official map from `epic_ip6_extended`, which omits the central tracking detector volumes; use that configuration only for the final consumer check.
+
+Run from a clean `scripts/material_map` work directory so the requested ACTS scripts and patches are reproducible. The workflow:
+
+* records DD4hep material with a geantino scan;
+* maps material onto the configured ACTS layer and boundary surfaces;
+* produces regenerated/current comparison plots and per-surface diagnostics;
+* smoke-tests the generated map with `epic_ip6_extended`.
+
+Prerequisites:
+
+1. At least 25 GB of free disk space and approximately two hours. Check available space before starting.
+2. A current installed ePIC geometry with `$DETECTOR_PATH` set.
+
+Run:
+
+```sh
+./run_material_map_validation.sh --nevents 1000 --nparticles 5000
+```
+
+Visually inspect the regenerated/current comparisons in `Validation/`, the diagnostics in `Surfaces/`, and the ACTS geometry plots in `plots/`. For a B0 change, also run targeted validation over the B0 acceptance (`eta > 4`); the generic validation does not adequately populate those surfaces.
+
+Record the geometry commit, container and ACTS versions, event and particle counts, output file size, and SHA-256 with the validation artifact.
 
 ## Use a local material map with EICrecon
 ```sh
@@ -143,9 +190,13 @@ never replace an already published artifact.
 The simplified B0 comparison uses its own [validated map](https://github.com/tom-bleher/epic/releases/tag/b0-ip6-simplified-material-20260906-bc8d86fe2fb2).
 
 ## Update the official material map
-1. You can either generate the map locally as described above, or download the artifact ```material_map``` from a PR CI.
-2. Check the generated comparison plots for any outstanding issues. Then upload the cbor file and relevant plots to [gitlab](https://eicweb.phy.anl.gov/EIC/detectors/athena/-/issues/153).
-3. Copy the url of your uploaded cbor file, and update the [path](https://github.com/eic/epic/blob/540a9e1e255e276548993449be09bd275cb3ef05/compact/tracking/definitions_craterlake.xml#L203) at the bottom epic/compact/tracking/definitions_craterlake.xml with a PR.
+
+1. Generate the map locally as above or download the `material_map` CI artifact.
+2. Review and retain the validation plots and provenance.
+3. Publish the full-detector `material-map.cbor` through a pull request to [eic/epic-data](https://github.com/eic/epic-data). Publish the reduced IP6 map as a separate artifact, preserving the full-detector map.
+4. After the full-detector map pull request merges, pin its immutable **merge commit SHA** in the `epic-data/raw/<SHA>/material-map.cbor` URL in `compact/tracking/material_map.xml`. Do not point production geometry at a fork or an unmerged commit.
+5. From a fresh cache, verify the URL, size, and SHA-256.
+6. Because maps are keyed by ACTS GeometryIdentifier, validate the separate IP6 map with the ACTS 47.7 workflow above in `epic_ip6_extended_5x41`. Every expected B0 approach disc must have mapped material, and targeted material closure must pass before updating its configured map artifact.
 
 
 

@@ -3,7 +3,12 @@ set -e
 # script for material map validation with ACTS python bindings
 # run as : ./run_material_map_validation.sh --nevents 1000
 # Shujie Li, 03. 2024 (https://github.com/eic/snippets/pull/3)
-DETECTOR_CONFIG="epic_craterlake_material_map"
+# ACTS 47 replaced the material-mapping API. Keep the older workflow below
+# for older environments; never download 45.x scripts into a 47.x run.
+if python -c 'import acts; raise SystemExit(tuple(acts.__version__) != (47, 7, 0))' 2>/dev/null; then
+  exec python "$(dirname "$(realpath "$0")")/run_b0_material_campaign.py" "$@"
+fi
+DETECTOR_CONFIG="${DETECTOR_CONFIG:-epic_craterlake_material_map}"
 # Check if DETECTOR_PATH are set
 if [[ -z ${DETECTOR_PATH} ]] ; then
   echo "You must set \$DETECTOR_PATH before running this script."

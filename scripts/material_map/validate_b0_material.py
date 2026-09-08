@@ -42,6 +42,32 @@ def integral(steps, low, high, point_steps=False):
     return total
 
 
+def material_moments(steps, low, high, point_steps=False):
+    """Radiation-length-weighted z moments; geometry diagnostics, not fit covariance."""
+    total, first, second = 0., 0., 0.
+    for step in steps:
+        if point_steps:
+            z = step["position"][2]
+            if not low <= z < high:
+                continue
+            weight, mean, square = step["x0"], z, z * z
+        else:
+            start, end = sorted((step["z0"], step["z1"]))
+            left, right = max(start, low), min(end, high)
+            if right <= left:
+                continue
+            weight = step["x0"] * (right - left) / (end - start)
+            mean = (left + right) / 2.
+            square = (left * left + left * right + right * right) / 3.
+        total += weight
+        first += weight * mean
+        second += weight * square
+    return {"X_over_X0": total, "X_over_X0_z_mm": first,
+            "X_over_X0_z2_mm2": second,
+            "mean_z_mm": first / total if total > 0 else None,
+            "rms_z_mm": np.sqrt(max(0., second / total - (first / total) ** 2)) if total > 0 else None}
+
+
 def summarize(values):
     array = np.asarray(values)
     return {"mean": float(array.mean()), "median": float(np.median(array)),
@@ -64,6 +90,29 @@ def geometry_hashes(xml):
             reference = Path(os.path.expandvars(node.attrib["ref"]))
             pending.append((reference if reference.is_absolute() else path.parent / reference).resolve())
     return dict(sorted(files.items()))
+
+
+def geometry_plugin_hashes(include_core=False):
+    """Fingerprint physical construction and ACTS conversion, preferring loaded libraries."""
+    maps = Path("/proc/self/maps").read_text().splitlines()
+    result = {}
+    names = ("libepic.so", "libActsPluginDD4hep.so") + (("libActsCore.so",) if include_core else ())
+    for name in names:
+        loaded_paths = [line.split(maxsplit=5)[5] for line in maps if len(line.split(maxsplit=5)) == 6]
+        if any(path.endswith("/" + name + " (deleted)") for path in loaded_paths):
+            raise RuntimeError(f"Loaded geometry library was replaced during this process: {name}")
+        loaded = [Path(path) for path in loaded_paths if path.endswith("/" + name)]
+        candidates = loaded or [Path(directory) / name
+                                for directory in os.environ.get("LD_LIBRARY_PATH", "").split(":")
+                                if directory]
+        for path in candidates:
+            if path.is_file():
+                result[name] = {"path": str(path.resolve()),
+                                "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+                break
+        else:
+            raise RuntimeError(f"Cannot identify geometry library {name}")
+    return result
 
 
 def verify_recording(truth, entries, xml, includes, directions_only=False):
@@ -107,6 +156,18 @@ def verify_recording(truth, entries, xml, includes, directions_only=False):
         different = sorted(key for key in recorded.keys() | current.keys()
                            if recorded.get(key) != current.get(key))
         raise RuntimeError(f"Recorded material geometry differs in compact files: {different}")
+    recorded_plugins = recording.get("geometry_plugins")
+    if recorded_plugins:
+        current_plugins = geometry_plugin_hashes()
+        if any(name not in current_plugins or item["sha256"] != current_plugins[name]["sha256"]
+               for name, item in recorded_plugins.items()):
+            raise RuntimeError("Recorded material geometry construction library differs")
+        result["geometry_verification_scope"] = (
+            "Recursive compact XML and library hashes " + ", ".join(sorted(recorded_plugins)) +
+            "; excludes external resources")
+        result["compiled_geometry_verified"] = True
+    else:
+        result["compiled_geometry_verified"] = False
     result.update(material_geometry_verified=True, sidecar=str(sidecar.resolve()),
                   sidecar_sha256=hashlib.sha256(raw).hexdigest(), recording=recording)
     return result
@@ -177,9 +238,15 @@ def analyze(probe, tree, output, provenance):
         for step in ray["tgeo"]:
             if step["z0"] >= zlast:
                 downstream_material[step["path"]] = downstream_material.get(step["path"], 0.) + step["x0"]
+        moments = {kind: material_moments(ray.get(kind, []), 0., zfirst,
+                                         point_steps=kind != "tgeo")
+                   for kind in ("tgeo", "intersection", "navigation")}
+        if not directions_only:
+            moments["geant4"] = material_moments(geant4, 0., zfirst)
         ray_reports.append({"entry": ray["entry"], "eta": ray["eta"],
                             "stations": sorted({hit["station"] for hit in ray["hits"]}),
-                            "measurements": len(ray["hits"]), "intervals": values})
+                            "measurements": len(ray["hits"]), "intervals": values,
+                            "upstream_material_moments": moments})
     statistics = {name: {kind: summarize(values) for kind, values in kinds.items()}
                   for name, kinds in samples.items()}
     # These are declared engineering acceptance tolerances, not ACTS standards.
@@ -245,6 +312,7 @@ def analyze(probe, tree, output, provenance):
         report["geant4_tgeo_crosscheck_through_last_sensor"] = None
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     plot(samples, rays, output / "assets" / "b0_material_closure.pdf", provenance)
+    plot_material_positions(ray_reports, output / "assets" / "b0_material_positions.pdf", provenance)
     for name, stats in statistics.items():
         print(name, "mean X/X0", {kind: round(stat["mean"], 6) for kind, stat in stats.items()})
     print("Geant4/TGeo cross-check", report["geant4_tgeo_crosscheck_z_below_8m"])
@@ -256,6 +324,37 @@ def analyze(probe, tree, output, provenance):
     print("Geant4/TGeo closure:", truth_ok)
     return 0 if (preflight_ok and material_ok and truth_ok is not False and
                  not navigation_failures and not missing_hits) else 1
+
+
+def plot_material_positions(rays, target, provenance):
+    """Expose upstream placement errors which integrated X/X0 cannot diagnose."""
+    fig, axes = plt.subplots(1, 3, figsize=(12., 4.2))
+    eta = np.asarray([ray["eta"] for ray in rays])
+    labels = {"tgeo": "DD4hep/TGeo", "geant4": "Geant4", "navigation": "ACTS navigation"}
+    for kind, label in labels.items():
+        if kind not in rays[0]["upstream_material_moments"]:
+            continue
+        centers = [ray["upstream_material_moments"][kind]["mean_z_mm"] for ray in rays]
+        widths = [ray["upstream_material_moments"][kind]["rms_z_mm"] for ray in rays]
+        axes[0].scatter(eta, centers, s=8, label=label, alpha=.6)
+        axes[1].scatter(eta, widths, s=8, alpha=.6)
+    reference = "geant4" if "geant4" in rays[0]["upstream_material_moments"] else "tgeo"
+    offsets = [ray["upstream_material_moments"]["navigation"]["mean_z_mm"] -
+               ray["upstream_material_moments"][reference]["mean_z_mm"] for ray in rays
+               if ray["upstream_material_moments"]["navigation"]["mean_z_mm"] is not None and
+               ray["upstream_material_moments"][reference]["mean_z_mm"] is not None]
+    axes[2].hist(offsets, bins=40, histtype="step")
+    axes[2].axvline(0., color="grey", linewidth=.8)
+    axes[0].set(xlabel=r"$\eta$", ylabel="Radiation-weighted mean z [mm]")
+    axes[1].set(xlabel=r"$\eta$", ylabel="Radiation-weighted z RMS [mm]")
+    axes[2].set(xlabel=f"ACTS − {labels[reference]} mean z [mm]", ylabel="Rays")
+    axes[0].legend(fontsize=8)
+    fig.suptitle(f"ePIC B0 | {provenance['geometry_config']} | {provenance['field_config']} | ACTS 47.7\n"
+                 f"{len(rays)} paired rays; material before first sensor; straight rays, no magnetic deflection",
+                 fontsize=10)
+    fig.tight_layout()
+    fig.savefig(target)
+    plt.close(fig)
 
 
 def plot(samples, rays, target, provenance):
@@ -301,6 +400,8 @@ def main():
     p.add_argument("--padding-mm", type=float, default=5.)
     p.add_argument("--directions-only", action="store_true", help="Use recorded origins/directions only; do not compare another geometry's Geant4 material")
     p.add_argument("--remap", action="store_true", help="Build candidate.cbor using --map binning before held-out validation")
+    p.add_argument("--native-binning", action="store_true",
+                   help="Remap using current geometry-declared material surfaces, without an old map's IDs")
     p.add_argument("--training-entries", type=int, default=100000, help="First N recorded entries used for remapping")
     args = p.parse_args()
     if min(args.sample_size, args.max_input_entries, args.candidate_limit, args.training_entries) <= 0:
@@ -313,6 +414,8 @@ def main():
         p.error("Use the original epic_ip6_extended or epic_ip6_extended_5x41 configuration")
     if args.remap and args.directions_only:
         p.error("Remapping requires material recorded in the matching geometry")
+    if args.native_binning and not args.remap:
+        p.error("--native-binning requires --remap")
     args.output.mkdir(parents=True, exist_ok=True)
     tree = uproot.open(args.truth)["material-tracks"]
     if args.first_input_entry >= tree.num_entries:
@@ -323,13 +426,15 @@ def main():
     training = None
     binning_map = {"path": str(args.material_map.resolve()),
                    "sha256": hashlib.sha256(args.material_map.read_bytes()).hexdigest()}
+    if args.native_binning:
+        binning_map = {"geometry_declared": True, "geometry_include_sha256": includes}
     if args.remap:
         if args.training_entries >= tree.num_entries:
             p.error("Leave a disjoint recorded range for held-out validation")
         candidate = args.output / "candidate.cbor"
         with (args.output / "remap.log").open("w") as log:
             subprocess.run([str(args.probe.resolve()), str(args.xml.resolve()),
-                            str(args.material_map.resolve()), str(args.truth.resolve()),
+                            "-" if args.native_binning else str(args.material_map.resolve()), str(args.truth.resolve()),
                             str(candidate.resolve()), "0", str(args.training_entries), str(args.padding_mm)],
                            stdout=log, stderr=subprocess.STDOUT, check=True)
         training = json.loads(Path(str(candidate) + ".json").read_text())
@@ -355,6 +460,7 @@ def main():
     if len(field_configs) != 1:
         raise RuntimeError(f"Expected one beam-field configuration, found {field_configs}")
     provenance = {"acts": list(acts.__version__), "xml": str(args.xml.resolve()),
+                  "tracking_runtime_libraries": geometry_plugin_hashes(include_core=True),
                   "geometry_config": args.xml.stem, "field_config": field_configs[0],
                   "directions_only": args.directions_only,
                   "geometry_include_sha256": includes,

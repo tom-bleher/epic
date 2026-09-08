@@ -10,6 +10,7 @@
 #include <Acts/Material/IntersectionMaterialAssigner.hpp>
 #include <Acts/Material/MaterialMapper.hpp>
 #include <Acts/Material/MaterialValidator.hpp>
+#include <Acts/Material/ProtoSurfaceMaterial.hpp>
 #include <Acts/Propagator/MaterialInteractor.hpp>
 #include <Acts/Propagator/Navigator.hpp>
 #include <Acts/Propagator/Propagator.hpp>
@@ -268,8 +269,11 @@ int main(int argc, char** argv) {
   detector->apply("DD4hepVolumeManager", 0, nullptr);
   const auto gctx = Acts::GeometryContext::dangerouslyDefaultConstruct();
   const Acts::MagneticFieldContext mctx{};
-  auto material = std::make_shared<Acts::JsonMaterialDecorator>(
-      Acts::MaterialMapJsonConverter::Config{}, argv[2], Acts::Logging::WARNING);
+  std::shared_ptr<Acts::JsonMaterialDecorator> material;
+  const bool nativeBinning = argc == 8 && std::string(argv[2]) == "-";
+  if (!nativeBinning)
+    material = std::make_shared<Acts::JsonMaterialDecorator>(
+        Acts::MaterialMapJsonConverter::Config{}, argv[2], Acts::Logging::WARNING);
   auto logger = Acts::getDefaultLogger("B0MaterialValidation", Acts::Logging::WARNING);
   std::shared_ptr<const Acts::TrackingGeometry> geometry = ActsPlugins::convertDD4hepDetector(
       detector->world(), *logger, Acts::equidistant, Acts::equidistant, Acts::equidistant, 1.,
@@ -279,9 +283,23 @@ int main(int argc, char** argv) {
   unsigned duplicateDetectorIds = 0;
   Acts::IntersectionMaterialAssigner::Config assignerConfig;
   std::set<const Acts::Surface*, GeometryIdLess> mapped;
+  // Navigation layers bridge empty gaps. ACTS 47's shifted planar/disc copy
+  // retains the source prototype material; that does not make the gap a
+  // physical mapping target. Identify these by layer type, never by odd IDs.
+  std::set<const Acts::Surface*> navigationSurfaces;
+  geometry->visitVolumes([&](const Acts::TrackingVolume* volume) {
+    if (volume->confinedLayers())
+      for (const auto& layer : volume->confinedLayers()->arrayObjects())
+        if (layer->layerType() == Acts::navigation)
+          navigationSurfaces.insert(&layer->surfaceRepresentation());
+  });
   geometry->visitSurfaces(
       [&](const Acts::Surface* surface) {
-        if (dynamic_cast<const Acts::BinnedSurfaceMaterial*>(surface->surfaceMaterial()))
+        if (navigationSurfaces.contains(surface))
+          return;
+        if (dynamic_cast<const Acts::BinnedSurfaceMaterial*>(surface->surfaceMaterial()) ||
+            (argc == 8 &&
+             dynamic_cast<const Acts::ProtoSurfaceMaterial*>(surface->surfaceMaterial())))
           mapped.insert(surface);
         const auto* element =
             dynamic_cast<const ActsPlugins::DD4hepDetectorElement*>(surface->surfacePlacement());

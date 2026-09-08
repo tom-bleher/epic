@@ -15,7 +15,7 @@ import acts.examples.dd4hep
 import acts.examples.geant4
 import uproot
 
-from validate_b0_material import geometry_hashes
+from validate_b0_material import geometry_hashes, geometry_plugin_hashes
 
 
 def main():
@@ -44,14 +44,20 @@ def main():
         acts.examples.dd4hep.DD4hepDetector.Config(
             xmlFileNames=[str(args.xml.resolve())], envelopeR=1., envelopeZ=5.,
             logLevel=acts.logging.WARNING, dd4hepLogLevel=acts.logging.WARNING))
+    includes = geometry_hashes(args.xml)
+    plugins = geometry_plugin_hashes()
     recording.runMaterialRecording(
         detector, acts.examples.Sequencer(events=args.events, numThreads=1),
         tracksPerEvent=args.particles, etaRange=tuple(args.eta_range),
         materialTrackCollectionName="material-tracks",
         outputFileBase=str(args.output.resolve().with_suffix(""))).run()
+    if includes != geometry_hashes(args.xml) or plugins != geometry_plugin_hashes():
+        raise RuntimeError("Geometry XML or construction library changed during recording")
     provenance = {
         "acts": list(acts.__version__), "xml": str(args.xml.resolve()),
-        "geometry_include_sha256": geometry_hashes(args.xml),
+        "geometry_include_sha256": includes,
+        "geometry_plugins": plugins,
+        "container": os.environ.get("SINGULARITY_CONTAINER"),
         "native_recording_source": str(source.resolve()),
         "native_recording_source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "events": args.events, "particles_per_event": args.particles,
