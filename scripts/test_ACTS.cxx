@@ -2,6 +2,8 @@
 // Copyright (C) 2022 - 2024, Whitney Armstrong, Wouter Deconinck
 
 #include "DD4hep/Detector.h"
+#include "b0_acts_boundary_check.h"
+#include <iostream>
 
 #include <Acts/Geometry/TrackingGeometry.hpp>
 #include <Acts/Geometry/TrackingVolume.hpp>
@@ -24,7 +26,9 @@ using Acts::convertDD4hepDetector;
  *
  *
  */
-void test_ACTS(const char* compact = "epic.xml") {
+// Use the same envelope as reconstruction; pass its acts:LayerEnvelopeZ override
+// here when validating a different configuration (lengths in mm).
+void test_ACTS(const char* compact = "epic.xml", double layerEnvelopeZ = 5.0) {
   // -------------------------
   // Get the DD4hep instance
   // Load the compact XML file
@@ -33,7 +37,9 @@ void test_ACTS(const char* compact = "epic.xml") {
   detector->fromCompact(compact);
 
   auto logger                 = Acts::getDefaultLogger("Acts", Acts::Logging::Level::VERBOSE);
-  auto acts_tracking_geometry = convertDD4hepDetector(detector->world(), *logger);
+  auto acts_tracking_geometry = convertDD4hepDetector(
+      detector->world(), *logger, Acts::equidistant, Acts::equidistant, Acts::equidistant,
+      Acts::UnitConstants::mm, layerEnvelopeZ * Acts::UnitConstants::mm);
 
   // Visit all surfaces
   acts_tracking_geometry->visitSurfaces([](const Acts::Surface* surface) {});
@@ -45,6 +51,7 @@ void test_ACTS(const char* compact = "epic.xml") {
   Acts::ViewConfig passiveView{.color = {240, 180, 0}};     // lightning yellow
   Acts::ViewConfig gridView{.color = {220, 0, 0}};          // scarlet red
   Acts::GeometryContext trackingGeoCtx = Acts::GeometryContext::dangerouslyDefaultConstruct();
+  epic::writeB0ApproachClearances(*acts_tracking_geometry, trackingGeoCtx, std::cout);
   const Acts::TrackingVolume* world    = acts_tracking_geometry->highestTrackingVolume();
   // Export to obj+mtl
   Acts::ObjVisualization3D objVis;

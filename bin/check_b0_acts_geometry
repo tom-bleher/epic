@@ -1,0 +1,326 @@
+#!/usr/bin/env python3
+
+"""Check B0-specific invariants in verbose scripts/test_ACTS.cxx output.
+
+Expected layer names, z positions, and material binning are derived from the
+compact geometry description (B0_tracker.xml + definitions.xml), so placement
+scans do not require editing this script. Additionally asserts that the
+outermost ACTS approach surface keeps a minimum clearance from the tracking
+volume boundary (the eic/epic#1089 failure mode: a coinciding surface and
+boundary causes floating-point navigation breaks).
+"""
+
+import argparse
+import math
+import os
+import re
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+UNITS = {
+    "mm": 1.0,
+    "cm": 10.0,
+    "m": 1000.0,
+    "um": 1e-3,
+    "rad": 1.0,
+    "mrad": 1e-3,
+    "deg": math.pi / 180.0,
+    "degree": math.pi / 180.0,
+}
+
+MATH_NAMES = {
+    "sin": math.sin,
+    "cos": math.cos,
+    "tan": math.tan,
+    "atan": math.atan,
+    "sqrt": math.sqrt,
+    "abs": abs,
+    "pi": math.pi,
+    "Pi": math.pi,
+}
+
+IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+class ConstantEvaluator:
+    """Evaluate compact-XML constant expressions (lengths in mm, angles in rad)."""
+
+    def __init__(self, compact_files):
+        self.raw = {}
+        for path in compact_files:
+            root = ET.parse(path).getroot()
+            for c in root.iter("constant"):
+                name, value = c.get("name"), c.get("value")
+                if name and value is not None:
+                    self.raw.setdefault(name, value)
+        self._cache = {}
+
+    def eval_name(self, name, stack=()):
+        if name in self._cache:
+            return self._cache[name]
+        if name not in self.raw:
+            raise KeyError(f"constant '{name}' not found in compact files")
+        if name in stack:
+            raise ValueError(f"circular constant reference at '{name}'")
+        value = self.eval_expr(self.raw[name], stack + (name,))
+        self._cache[name] = value
+        return value
+
+    def eval_expr(self, expr, stack=()):
+        names = {}
+        for ident in set(IDENT_RE.findall(expr)):
+            if ident in UNITS:
+                names[ident] = UNITS[ident]
+            elif ident in MATH_NAMES:
+                names[ident] = MATH_NAMES[ident]
+            else:
+                names[ident] = self.eval_name(ident, stack)
+        return float(eval(expr, {"__builtins__": {}}, names))  # noqa: S307
+
+
+def default_compact_files():
+    candidates = []
+    detector_path = os.environ.get("DETECTOR_PATH")
+    if detector_path:
+        candidates.append(Path(detector_path) / "compact")
+    candidates.append(Path(__file__).resolve().parent.parent / "compact")
+    for base in candidates:
+        b0 = base / "far_forward" / "B0_tracker.xml"
+        defs = base / "definitions.xml"
+        if b0.exists() and defs.exists():
+            return [defs, b0]
+    raise SystemExit(
+        "could not locate compact files; pass --compact definitions.xml "
+        "--compact far_forward/B0_tracker.xml"
+    )
+
+
+def parse_b0_layout(b0_xml, evaluator):
+    """Return per-layer expectations derived from the compact description."""
+    root = ET.parse(b0_xml).getroot()
+    det = next(d for d in root.iter("detector") if d.get("name") == "B0Tracker")
+
+    # Sensitive stack extent of the shared TrackingUnit module.
+    unit = next(m for m in root.iter("module") if m.get("name") == "TrackingUnit")
+    s_zmin, s_zmax = math.inf, -math.inf
+    for comp in unit.findall("module_component"):
+        if comp.get("sensitive") != "true":
+            continue
+        dz = evaluator.eval_expr(comp.find("box").get("z"))
+        pz = evaluator.eval_expr(comp.find("position").get("z"))
+        s_zmin = min(s_zmin, pz - dz / 2.0)
+        s_zmax = max(s_zmax, pz + dz / 2.0)
+    sens_center = 0.5 * (s_zmin + s_zmax)
+    sens_half_extent = 0.5 * (s_zmax - s_zmin)
+
+    zpos = evaluator.eval_name("B0TrackerCenter_zpos")
+    theta = evaluator.eval_name("B0Tracker_rotation")
+    offset = evaluator.eval_name("B0TrackerModuleOffsetFromSupport")
+
+    layers = []
+    for layer in det.findall("layer"):
+        station = int(layer.get("station"))
+        side = layer.get("side")
+        pos = layer.find("position")
+        env = layer.find("envelope")
+        x_l = evaluator.eval_expr(pos.get("x"))
+        z_l = evaluator.eval_expr(pos.get("z"))
+        # Mirror-symmetric about the station origin, matching the driver:
+        # each side's sensor plane sits at +/-(offset + sens_center).
+        z_local = z_l + (1.0 if side == "front" else -1.0) * (offset + sens_center)
+        z_global = zpos - x_l * math.sin(theta) + z_local * math.cos(theta)
+        layers.append(
+            {
+                "name": f"B0Tracker_layer{station}_{side}_P",
+                "station": station,
+                "side": side,
+                "z_mm": z_global,
+                "env_zmax_mm": evaluator.eval_expr(env.get("zmax_tolerance")),
+            }
+        )
+    layers.sort(key=lambda entry: entry["z_mm"])
+
+    bins = {
+        "binPhi": int(round(evaluator.eval_name("B0TrackerLayerMaterialPhiBins"))),
+        "binR": int(round(evaluator.eval_name("B0TrackerLayerMaterialRBins"))),
+    }
+    return layers, bins, sens_half_extent
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Check B0-specific invariants in verbose scripts/test_ACTS.cxx output."
+    )
+    parser.add_argument("log", type=Path, help="Verbose ACTS geometry log to inspect")
+    parser.add_argument(
+        "--compact",
+        action="append",
+        type=Path,
+        default=None,
+        help="Compact XML file(s) providing constants and the B0 layer layout "
+        "(default: definitions.xml + far_forward/B0_tracker.xml from "
+        "$DETECTOR_PATH or the repository checkout)",
+    )
+    parser.add_argument(
+        "--z-tolerance-mm",
+        type=float,
+        default=0.01,
+        help="Allowed absolute tolerance for B0 ACTS z positions in mm",
+    )
+    parser.add_argument(
+        "--min-boundary-clearance-mm",
+        type=float,
+        default=0.5,
+        help="Required clearance between the outermost B0 approach surface and "
+        "the tracking volume boundary (eic/epic#1089)",
+    )
+    return parser.parse_args()
+
+
+def parse_float_list(raw):
+    return [float(value) for value in re.findall(r"[-+]?\d+(?:\.\d+)?", raw)]
+
+
+def format_list(values):
+    return ", ".join(f"{value:.6f}" for value in values)
+
+
+def main():
+    args = parse_args()
+
+    compact_files = args.compact or default_compact_files()
+    b0_xml = next((p for p in compact_files if "B0_tracker" in p.name), None)
+    if b0_xml is None:
+        raise SystemExit(
+            "error: none of the compact files looks like B0_tracker*.xml: "
+            + ", ".join(str(p) for p in compact_files)
+        )
+    evaluator = ConstantEvaluator(compact_files)
+    layers, expected_bins, sens_half_extent = parse_b0_layout(b0_xml, evaluator)
+
+    expected_layers = {entry["name"] for entry in layers}
+    expected_z = [entry["z_mm"] for entry in layers]
+
+    text = args.log.read_text(errors="replace")
+    failures = []
+
+    candidate_matches = re.findall(
+        r"Layer candidate match: [^ ]+ -> (B0Tracker_layer\d+_(?:front|back)_P)",
+        text,
+    )
+    if set(candidate_matches) != expected_layers:
+        failures.append(
+            "B0 layer candidate set mismatch: "
+            f"expected {sorted(expected_layers)}, got {sorted(set(candidate_matches))}"
+        )
+
+    translated_matches = re.findall(
+        r"=> Translating layer from: (B0Tracker_layer\d+_(?:front|back)_P)", text
+    )
+    if set(translated_matches) != expected_layers:
+        failures.append(
+            "B0 translated layer set mismatch: "
+            f"expected {sorted(expected_layers)}, got {sorted(set(translated_matches))}"
+        )
+
+    z_matches = re.findall(r"D2A_V:B0Trac\s+VERBOSE\s+-> z locations:\s*([^\n]+)", text)
+    z_positions = []
+    if not z_matches:
+        failures.append("B0 z locations line was not found")
+    else:
+        z_positions = parse_float_list(z_matches[-1])
+        if len(z_positions) != len(expected_z):
+            failures.append(
+                f"Expected {len(expected_z)} B0 z positions, got {len(z_positions)}: "
+                f"{format_list(z_positions)}"
+            )
+        else:
+            for expected, actual in zip(expected_z, z_positions):
+                if abs(expected - actual) > args.z_tolerance_mm:
+                    failures.append(
+                        "B0 z position mismatch: "
+                        f"expected {expected:.6f} mm (from compact constants), got "
+                        f"{actual:.6f} mm (tolerance {args.z_tolerance_mm:.6f} mm)"
+                    )
+
+    # ------------------------------------------------------------------
+    # Material binning per layer, from the compact constants.
+    # ------------------------------------------------------------------
+    material = {layer: {} for layer in expected_layers}
+    current_layer = None
+    layer_header = re.compile(
+        r"Translating DD4hep material into Acts material for DiscLayer : "
+        r"(B0Tracker_layer\d+_(?:front|back)_P)"
+    )
+    any_layer_header = re.compile(
+        r"Translating DD4hep material into Acts material for \w+Layer : "
+    )
+    binning_line = re.compile(
+        r"material binning for (binPhi|binR) on "
+        r"(layer_material_inner|layer_material_outer):\s*(\d+)"
+    )
+    for line in text.splitlines():
+        header_match = layer_header.search(line)
+        if header_match:
+            current_layer = header_match.group(1)
+            continue
+        if any_layer_header.search(line):
+            # Another detector's layer starts here; stop attributing its
+            # binning lines to the last B0 layer.
+            current_layer = None
+            continue
+        binning_match = binning_line.search(line)
+        if current_layer and binning_match and current_layer in material:
+            axis, surface, value = binning_match.groups()
+            material[current_layer][(surface, axis)] = int(value)
+
+    for layer in sorted(expected_layers):
+        for surface in ("layer_material_inner", "layer_material_outer"):
+            for axis, expected in expected_bins.items():
+                actual = material[layer].get((surface, axis))
+                if actual != expected:
+                    failures.append(
+                        f"{layer}: material binning {axis} on {surface} is "
+                        f"{actual}, expected {expected}"
+                    )
+
+    # Read exact transformed-disc extrema from test_ACTS, not inferred XML
+    # center positions. Both axial boundaries matter for every approach disc.
+    clearances = re.findall(
+        r"^B0_APPROACH_CLEARANCE (\d+) (\S+) (\S+)$", text, re.MULTILINE
+    )
+    expected_approaches = 2 * len(expected_layers)
+    if len(clearances) != expected_approaches or len({row[0] for row in clearances}) != expected_approaches:
+        failures.append(
+            f"Expected {expected_approaches} unique B0 approach clearances from test_ACTS, "
+            f"got {len(clearances)} records"
+        )
+    for identifier, lower, upper in clearances:
+        try:
+            values = (float(lower), float(upper))
+        except ValueError:
+            values = (math.nan, math.nan)
+        if any(not math.isfinite(value) or value < args.min_boundary_clearance_mm for value in values):
+            failures.append(
+                f"B0 approach {identifier}: axial boundary clearances {lower}, {upper} mm "
+                f"(require >= {args.min_boundary_clearance_mm} mm)"
+            )
+    if clearances and not failures:
+        print("B0 minimum axial approach/volume clearance: "
+              f"{min(float(value) for row in clearances for value in row[1:]):.6f} mm")
+
+    if failures:
+        print("B0 ACTS geometry check FAIL")
+        for failure in failures:
+            print(f" - {failure}")
+        sys.exit(1)
+
+    print(
+        "B0 ACTS geometry check PASS "
+        f"({len(expected_layers)} layers, z = {format_list(expected_z)})"
+    )
+
+
+if __name__ == "__main__":
+    main()

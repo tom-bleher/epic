@@ -25,10 +25,14 @@ jobs:
         platform-release: "eic_xl:nightly"
         setup: install/bin/thisepic.sh
         run: |
+          set -o pipefail
           export DETECTOR_CACHE=/opt/detector/epic-main/share/epic
           /usr/bin/time -v \
           root -b -q "scripts/test_ACTS.cxx+(\"${DETECTOR_PATH}/${{matrix.detector_config}}.xml\")" | tee check_tracking_geometry.out
           bin/acts_geo_check check_tracking_geometry.out
+          if [[ "${{matrix.detector_config}}" == epic_ip6_extended* ]]; then
+            bin/check_b0_acts_geometry check_tracking_geometry.out
+          fi
     - uses: actions/upload-artifact@v7
       with:
         name: ${{matrix.detector_config}}.obj

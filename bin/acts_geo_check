@@ -27,4 +27,10 @@ if [[ "$nlines" > "0" ]] ; then
   res="1"
 fi
 
+# Require transformed-surface diagnostics whenever B0 is present. The checker
+# rejects missing records, so an old or truncated log cannot silently pass.
+if grep -q 'B0Tracker' "$logfile"; then
+  "$(dirname "$0")/check_b0_acts_geometry" "$logfile" || res=1
+fi
+
 exit ${res}
