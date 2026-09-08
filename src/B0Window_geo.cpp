@@ -8,6 +8,7 @@
 #include "DDRec/Surface.h"
 #include "XML/Layering.h"
 #include <XML/Helper.h>
+#include "DD4hepDetectorHelper.h"
 
 using namespace std;
 using namespace dd4hep;
@@ -49,6 +50,20 @@ static Ref_t create_detector(Detector& description, xml_h e, SensitiveDetector /
   PlacedVolume phv = motherVol.placeVolume(vol, pos);
 
   det.setPlacement(phv);
+
+  // Reconstruction-only description of the existing Boolean steel window.
+  // The physical solid, material and placement above remain unchanged.
+  if (x_det.hasChild(_Unicode(acts_passive_disc))) {
+    auto& params = DD4hepDetectorHelper::ensureExtension<dd4hep::rec::VariantParameters>(det);
+    params.set<bool>("passive_disc", true);
+    params.set<double>("passive_disc_r_min", sizeR_had / dd4hep::mm);
+    params.set<double>("passive_disc_r_max", sizeR / dd4hep::mm);
+    params.set<double>("passive_disc_half_length_z", sizeZ / dd4hep::mm);
+    for (xml_coll_t material(x_det, _Unicode(layer_material)); material; ++material) {
+      DD4hepDetectorHelper::xmlToProtoSurfaceMaterial(xml_comp_t(material), params,
+                                                      "layer_material");
+    }
+  }
 
   return det;
 }

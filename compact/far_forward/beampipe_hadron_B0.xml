@@ -16,6 +16,9 @@
     </detector>
 
     <detector id="B0Window_ID" name="B0Window" type="B0Window" material="StainlessSteelP506" vis="AnlLightGray">
+      <!-- ACTS passive reference at the true steel midplane; no physical change. -->
+      <acts_passive_disc/>
+      <layer_material surface="representing" binning="binPhi,binR" bins0="30" bins1="20"/>
       <dimensions r="B0PF_InnerRadius" z="B0Win_thickness" x="3.0*Q0EF_InnerRadius" y="Beampipe_rmax" />
       <position   x="B0PF_XPosition" y="0" z="B0PF_CenterPosition-B0PF_Length/2.0+B0Win_thickness" />
       <rotation   x="0*rad" y="0*rad" z="0*rad" />

@@ -379,6 +379,7 @@
     <plugin name="DD4hep_ParametersPlugin">
       <argument value="B0Tracker"/>
       <argument value="layer_pattern: str=B0Tracker_layer\d+_(front|back)_P"/>
+      <argument value="passive_layer_references: str=B0Window"/>
     </plugin>
   </plugins>
 </lccdd>
