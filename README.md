@@ -48,8 +48,7 @@ source install/bin/thisepic.sh
 B0 module placements use distinct TrackingUnit volumes, so the stock npsim
 tracker action (`Geant4TrackerWeightedAction`) is enough. Do not reuse a
 shared module assembly: Weighted keys hits on the leaf physical-volume
-pointer. The optional DDG4 plugin (`-DEPIC_BUILD_DDG4_PLUGINS=ON`) is not
-required for this geometry.
+pointer.
 
 `scripts/test_ACTS.cxx` uses a 5 mm ACTS volume-envelope padding in z, matching
 the B0 reconstruction default. Its optional second argument must match any
