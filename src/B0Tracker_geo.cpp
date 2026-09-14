@@ -13,8 +13,9 @@
  *     is monotonic in z and separates front from back
  *   - Module ids restart at 1 per layer, so cellIDs do not depend on the
  *     order of <layer> blocks in the compact file
- *   - TrackingUnit Assembly is built once and reused via placeVolume for
- *     every (layer, module position)
+ *   - Each module placement gets its own TrackingUnit volumes (not a shared
+ *     assembly). Stock Geant4TrackerWeighted keys on the leaf physical-volume
+ *     pointer; a reused template merges deposits from different sensors.
  *
  * @{
  */
@@ -29,6 +30,7 @@
 #include "DDRec/Surface.h"
 #include "XML/Utilities.h"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -59,6 +61,46 @@ struct SupportComponentDef {
   Volume volume;
   Position position;
 };
+
+struct TrackingUnit {
+  Assembly assembly;
+  std::vector<PlacedVolume> sensors;
+  std::vector<VolPlane> surfaces;
+};
+
+TrackingUnit makeTrackingUnit(Detector& description, SensitiveDetector sens,
+                              const std::vector<ModuleComponentDef>& moduleComponents,
+                              const std::string& vis, int layerID, int moduleID) {
+  const std::string suffix =
+      _toString(layerID, "_l%d") + _toString(moduleID, "_m%d");
+  TrackingUnit unit{Assembly("TrackingUnit" + suffix), {}, {}};
+  unit.assembly.setVisAttributes(description, vis);
+
+  int sensorIndex = 1;
+  for (const auto& cdef : moduleComponents) {
+    Material mat = description.material(cdef.material);
+    Box shape(cdef.dx / 2.0, cdef.dy / 2.0, cdef.dz / 2.0);
+    Volume c_vol(cdef.name + suffix, shape, mat);
+    c_vol.setVisAttributes(description, cdef.vis);
+    if (cdef.sensitive) {
+      c_vol.setSensitiveDetector(sens);
+    }
+
+    PlacedVolume comp_pv = unit.assembly.placeVolume(c_vol, Position(cdef.px, cdef.py, cdef.pz));
+    if (cdef.sensitive) {
+      comp_pv.addPhysVolID("sensor", sensorIndex);
+      unit.sensors.push_back(comp_pv);
+
+      Vector3D u(-1.0, 0.0, 0.0);
+      Vector3D v(0.0, -1.0, 0.0);
+      Vector3D n(0.0, 0.0, 1.0);
+      SurfaceType type(SurfaceType::Sensitive);
+      unit.surfaces.emplace_back(c_vol, type, cdef.inner, cdef.outer, u, v, n);
+      ++sensorIndex;
+    }
+  }
+  return unit;
+}
 
 } // namespace
 
@@ -164,53 +206,18 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     cdef.outer = zMax - cdef.pz;
   }
 
-  // Collect the module's sensitive PlacedVolumes and ACTS VolPlane surfaces,
-  // reused at every module position
-  Assembly moduleAsm("TrackingUnit");
-  std::vector<PlacedVolume> moduleSensVols;
-  std::vector<VolPlane> moduleSensSurfs;
-
-  moduleAsm.setVisAttributes(
-      description, getAttrOrDefault<std::string>(xml_comp_t(trackingUnit), _Unicode(vis), ""));
-
-  {
-    int sensorIndex = 1;
-    for (const auto& cdef : moduleComponents) {
-      Material mat = description.material(cdef.material);
-      Box shape(cdef.dx / 2.0, cdef.dy / 2.0, cdef.dz / 2.0);
-      Volume c_vol(cdef.name, shape, mat);
-
-      c_vol.setVisAttributes(description, cdef.vis);
-      if (cdef.sensitive) {
-        c_vol.setSensitiveDetector(sens);
-      }
-
-      PlacedVolume comp_pv = moduleAsm.placeVolume(c_vol, Position(cdef.px, cdef.py, cdef.pz));
-
-      if (cdef.sensitive) {
-        comp_pv.addPhysVolID("sensor", sensorIndex);
-        moduleSensVols.push_back(comp_pv);
-
-        // Measurement plane attached to the sensitive volume
-        Vector3D u(-1.0, 0.0, 0.0);
-        Vector3D v(0.0, -1.0, 0.0);
-        Vector3D n(0.0, 0.0, 1.0);
-        SurfaceType type(SurfaceType::Sensitive);
-        VolPlane surf(c_vol, type, cdef.inner, cdef.outer, u, v, n);
-        moduleSensSurfs.push_back(surf);
-
-        ++sensorIndex;
-      }
-    }
-  }
+  const std::string trackingUnitVis =
+      getAttrOrDefault<std::string>(xml_comp_t(trackingUnit), _Unicode(vis), "");
+  const std::size_t nSensitive = static_cast<std::size_t>(
+      std::count_if(moduleComponents.begin(), moduleComponents.end(),
+                    [](const ModuleComponentDef& c) { return c.sensitive; }));
 
   // Guard cellID field capacities against the readout definition itself,
   // so a readout or module change cannot silently overflow a bit field
   const dd4hep::IDDescriptor idSpec = sens.readout().idSpec();
   const auto maxSensorID            = idSpec.field("sensor")->maxValue();
-  if (static_cast<long long>(moduleSensVols.size()) > static_cast<long long>(maxSensorID)) {
-    throw std::runtime_error("B0Tracker: TrackingUnit has " +
-                             std::to_string(moduleSensVols.size()) +
+  if (static_cast<long long>(nSensitive) > static_cast<long long>(maxSensorID)) {
+    throw std::runtime_error("B0Tracker: TrackingUnit has " + std::to_string(nSensitive) +
                              " sensitive components; the 'sensor' readout field holds at most " +
                              std::to_string(maxSensorID));
   }
@@ -354,7 +361,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     DetElement sideDE(sdet, sideLayerName + "_P", layerID);
     sideDE.setPlacement(sidePV);
 
-    // Place the shared TrackingUnit Assembly at each <module_positions> entry
+    // One TrackingUnit volume tree per placement so Geant4 leaf pointers differ
     int moduleID = 1;
 
     for (xml_coll_t mp(mpos, _U(module)); mp; ++mp, ++moduleID) {
@@ -369,15 +376,17 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       RotationZYX rotLocal(modRotZ, 0.0, isFront ? 0.0 : M_PI);
       Transform3D modTr(rotLocal, Position(modX, modY, modZ));
 
-      PlacedVolume mod_pv = sideVol.placeVolume(moduleAsm, modTr);
+      TrackingUnit unit =
+          makeTrackingUnit(description, sens, moduleComponents, trackingUnitVis, layerID, moduleID);
+      PlacedVolume mod_pv = sideVol.placeVolume(unit.assembly, modTr);
       mod_pv.addPhysVolID("module", moduleID);
 
       std::string m_base = _toString(layerID, "layer%d") + _toString(moduleID, "_module%d");
       DetElement modDE(sideDE, m_base, moduleID);
       modDE.setPlacement(mod_pv);
 
-      for (size_t ic = 0; ic < moduleSensVols.size(); ++ic) {
-        PlacedVolume sens_pv = moduleSensVols[ic];
+      for (size_t ic = 0; ic < unit.sensors.size(); ++ic) {
+        PlacedVolume sens_pv = unit.sensors[ic];
         DetElement comp_de(modDE, std::string("de_") + sens_pv.volume().name(), moduleID);
         comp_de.setPlacement(sens_pv);
 
@@ -385,7 +394,7 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
             DD4hepDetectorHelper::ensureExtension<dd4hep::rec::VariantParameters>(comp_de);
         comp_de_params.set<std::string>("axis_definitions", "XYZ");
 
-        volSurfaceList(comp_de)->push_back(moduleSensSurfs[ic]);
+        volSurfaceList(comp_de)->push_back(unit.surfaces[ic]);
       }
     }
     sideVol->GetShape()->ComputeBBox();
