@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 3.21)
-project(BoundedMaterialMapping LANGUAGES CXX)
-find_package(DD4hep REQUIRED COMPONENTS DDCore DDRec)
-find_package(Acts 44.4 REQUIRED COMPONENTS Core PluginDD4hep PluginJson PluginRoot)
-add_executable(bounded-material-map bounded_material_map.cpp)
-target_compile_features(bounded-material-map PRIVATE cxx_std_20)
-target_link_libraries(bounded-material-map PRIVATE DD4hep::DDCore Acts::Core Acts::PluginDD4hep Acts::PluginJson Acts::PluginRoot)
