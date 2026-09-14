@@ -1,7 +1,46 @@
 # Material Map for ACTS
 The material map needs to be updated from the default version in calibration/ when __ANY__ geometry or material thickness is changed within the tracking volume, even the change happens on a non-sensitive structure.
 
-## B0 validation and remapping with ACTS 47.7
+## Current official-shell workflow
+
+Use `~/eic/eic-shell` and its bundled ACTS, with the local geometry install
+sourced. The driver uses the selected `DETECTOR_CONFIG` (normally
+`epic_ip6_extended`, 5×41 GeV); generate the full detector's map separately.
+Run long jobs in tmux and use a clean work directory:
+
+```sh
+./scripts/material_map/run_material_map_validation.sh \
+  --nevents 1000 --nparticles 5000 --workdir /absolute/clean/workdir
+```
+
+The native Geant4 scan records pre-step positions. `bounded_mapping` trims
+finite steps at the first exit of the ACTS tracking envelope and assigns the
+retained midpoint to mapped surfaces. Material beyond that exit must not be
+assigned backwards to the final tracking surface. Native empty-bin averaging
+is retained. The driver reserves recorded entries for independent B0
+validation; it never overwrites an existing map.
+
+Reuse a verified scan with `--truth /absolute/geant4_material_tracks.root`
+and optionally `--binning-map /absolute/configuration-matched-map.cbor`
+`--training-entries 4000000`. The old CBOR supplies binning only; all material
+values are recomputed. Recording sidecars, map hashes, training ranges,
+geometry fingerprints, and assignment/conservation counters accompany the map.
+Historical sidecars without recursive XML/plugin hashes remain explicitly
+limited in provenance.
+
+The driver fails if held-out material screening fails. Sensor navigation has
+a separate reported status: material closure does not certify reconstruction.
+Inspect the comparison PDFs, material surfaces, ACTS geometry, and every
+reported status before updating a reconstruction map reference. This targeted
+B0 check does not certify the full detector's other tracking regions.
+See [paired validation](official_validation/README.md) for standalone use.
+Publish validated maps through a separately authorized `eic/epic-data` PR;
+do not commit generated maps, ROOT files, reports, or plots here.
+
+## Historical ACTS 47.7 experiment (retired)
+
+The instructions below document the past experiment only. Do not activate
+that overlay for current work; use the official-shell workflow above.
 
 For `epic_ip6_extended_5x41`, use `validate_b0_material.py` and its companion
 `b0_validation/b0-material-probe`. The validator also accepts the base
