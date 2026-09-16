@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """Validate source-level invariants of the realistic B0 tracker compact XML.
 
 This complements the detector-backed DD4hep/ACTS audit in this directory.  It
