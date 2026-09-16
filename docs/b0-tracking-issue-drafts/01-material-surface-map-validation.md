@@ -12,23 +12,24 @@ Relevant files:
 
 - `compact/far_forward/B0_tracker.xml`
 - `src/B0Tracker_geo.cpp`
-- B0 material-map generation / refresh scripts used by the branch
+- B0 material-map generation / validation scripts used by the branch
 
-Companion reconstruction work lives in `tom-bleher/EICrecon` on `feat/b0-tracking`.
+Companion reconstruction work lives in `tom-bleher/EICrecon` on `feat/b0-tracking`. The EICrecon issue-draft roadmap now also contains a runtime geometry/material-map contract so a validated map cannot be silently replaced in production benchmarks.
 
 ## Goal
 
 Demonstrate quantitatively that:
 
-1. Geant4 and ACTS see consistent sensitive-plane locations;
+1. Geant4, DD4hep reconstruction and ACTS see consistent sensitive-plane locations and identities;
 2. the effective material encountered by representative B0 trajectories is consistent between the detailed DD4hep geometry and the ACTS material representation;
-3. generated B0 material maps are reproducible and tightly coupled to the geometry revision they describe.
+3. material is applied at transport locations that reproduce the relevant track-state covariance, not merely the same integrated `X/X0`;
+4. generated B0 material maps are reproducible and tightly coupled to the geometry revision they describe.
 
 ## Required checks
 
 ### 1. Sensitive-surface geometry
 
-For every front/back B0 layer and representative modules/sensors, compare:
+For every front/back B0 layer and every module/sensor identity, compare:
 
 - DD4hep sensitive-volume center and orientation;
 - ACTS surface center and normal;
@@ -38,7 +39,29 @@ For every front/back B0 layer and representative modules/sensors, compare:
 
 Add an automated geometry check that catches accidental surface collapse, sign flips, duplicated placements, or incorrect front/back ordering.
 
-### 2. Geant4 material scan
+### 2. End-to-end sensitive-crossing round trip
+
+Geometry conversion alone is not enough. Exercise the complete measurement contract for every sensitive sensor:
+
+```text
+physical sensitive crossing
+  -> DD4hep cellID
+  -> simulated hit
+  -> raw hit
+  -> reconstructed hit position/covariance
+  -> ACTS surface + local coordinates
+```
+
+At minimum test:
+
+- sensor centers;
+- points near each sensor edge;
+- module/sensor overlap regions;
+- trajectories that cross multiple front/back surfaces in one physical station.
+
+Assert that the reconstructed measurement resolves back to the same intended physical sensor/surface and station. Keep **measurement count** and **physical-station count** separate in all tests.
+
+### 3. Geant4 material scan
 
 For representative trajectories spanning the B0 acceptance, record integrated material quantities from the detailed geometry, at least:
 
@@ -55,18 +78,34 @@ Include trajectories through:
 - near the beam-pipe aperture;
 - both sides of the transverse acceptance.
 
-### 3. ACTS material comparison
+### 4. ACTS material comparison
 
 Using the material map generated for the same geometry SHA, propagate the same trajectories through ACTS and compare cumulative material with the DD4hep/Geant4 scan.
 
-Agreement in total `X/X0` alone is not sufficient: large shifts in where scattering is applied relative to the measurements should be visible in the comparison.
+Agreement in total `X/X0` alone is not sufficient. Moving the same scattering strength to a different longitudinal location changes the transported position/direction covariance. In a simple drift, an angular kick with variance `sigma_alpha^2` a distance `D` from the reference plane contributes
 
-### 4. Material-map provenance and refresh
+```text
+Q = sigma_alpha^2 [[D^2, D], [D, 1]]
+```
+
+to `(x, dx/dz)`, so identical integrated material can still produce different track-parameter covariance.
+
+Add a charged-particle transport comparison on identical reference surfaces in the real B0 field. Compare at least:
+
+- position and direction residuals;
+- propagated covariance and correlations;
+- pull widths;
+- sensitivity to support/edge/hole regions.
+
+This should complement, not replace, the existing straight/geantino material-closure checks.
+
+### 5. Material-map provenance and refresh
 
 Make material-map provenance explicit and reproducible. Record at least:
 
 - `epic` commit SHA;
 - detector configuration / compact file;
+- compiled geometry-plugin identity/hash where possible;
 - field/config where relevant;
 - generation command/script version;
 - output map hash;
@@ -77,11 +116,13 @@ A geometry change affecting B0 material or sensitive surfaces should make it obv
 ## Acceptance criteria
 
 - [ ] Automated check verifies all expected B0 sensitive ACTS surfaces and front/back ordering.
+- [ ] Every sensitive sensor passes the crossing -> cellID -> reconstructed measurement -> ACTS-surface round trip at center and edge samples.
 - [ ] Representative DD4hep/Geant4 material scans are produced and stored/reproducible.
 - [ ] The same trajectories are evaluated in ACTS using the generated material map.
-- [ ] Differences in cumulative `X/X0` and material location are quantified.
+- [ ] Differences in cumulative `X/X0` **and material location/transport effect** are quantified.
+- [ ] Charged-particle same-surface residual/covariance/pull comparisons are available for representative B0 trajectories.
 - [ ] A documented tolerance/validation criterion is established.
-- [ ] Material-map generation records the geometry SHA and output hash.
+- [ ] Material-map generation records the geometry/plugin identity and output hash.
 - [ ] B0 reconstruction benchmarks in EICrecon can report/verify the material-map provenance.
 - [ ] A stale/mismatched material map cannot silently be presented as the validated B0 configuration.
 
