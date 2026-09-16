@@ -1,0 +1,16 @@
+name: B0 physical readout profile tests
+on:
+  pull_request:
+    paths:
+      - 'scripts/b0_readout/**'
+      - '.github/workflows/b0-readout.yml'
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s scripts/b0_readout -p test_profile.py -v
