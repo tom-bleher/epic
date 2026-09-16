@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """B0 uses the stock npsim tracker action.
 
 Each TrackingUnit copy has its own volumes, so Geant4TrackerWeightedAction
