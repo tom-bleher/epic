@@ -34,6 +34,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace dd4hep;
@@ -268,6 +269,10 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   // Distance from the support mid-plane to the tracking unit center
   const double moduleOffset = xml_comp_t(trackingUnit).attr<double>(_Unicode(offset_from_support));
 
+  // First and last sensor planes, for the ACTS guard layers below
+  double firstPlaneZ = std::numeric_limits<double>::max(), firstPlaneX = 0.0;
+  double lastPlaneZ = std::numeric_limits<double>::lowest(), lastPlaneX = 0.0;
+
   // now build the layers
   for (xml_coll_t layer(x_det, _U(layer)); layer; ++layer) {
     xml_comp_t x_layer = layer;
@@ -347,8 +352,16 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       sideVol.setVisAttributes(description.visAttributes(env_vis));
     }
 
-    PlacedVolume sidePV =
-        assembly.placeVolume(sideVol, Position(layerX, layerY, layerZ + sideLayerZ));
+    const double planeZ = layerZ + sideLayerZ;
+    PlacedVolume sidePV = assembly.placeVolume(sideVol, Position(layerX, layerY, planeZ));
+    if (planeZ < firstPlaneZ) {
+      firstPlaneZ = planeZ;
+      firstPlaneX = layerX;
+    }
+    if (planeZ > lastPlaneZ) {
+      lastPlaneZ = planeZ;
+      lastPlaneX = layerX;
+    }
     sidePV.addPhysVolID("layer", layerID);
 
     DetElement sideDE(sdet, sideLayerName + "_P", layerID);
@@ -409,6 +422,29 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
              "tol(rmin,rmax,zmin,zmax)=(%6.3f,%6.3f,%6.3f,%6.3f) mm",
              layerID, station, side.c_str(), (layerZ + sideLayerZ) / mm, env_rmin_tol / mm,
              env_rmax_tol / mm, env_zmin_tol / mm, env_zmax_tol / mm);
+  }
+
+  // Empty ACTS layers just outside the first and last sensor planes. The tilted
+  // planes reach further in global z than their layers; these layers widen the
+  // B0 tracking volume so that navigation does not skip their outer sensors.
+  if (xml_comp_t x_guard = x_det.child(_Unicode(acts_guard), false); x_guard.ptr()) {
+    const double gap  = x_guard.attr<double>(_Unicode(gap));
+    const double rmin = x_guard.rmin();
+    const double rmax = x_guard.rmax();
+    int guardID       = 0;
+    for (const auto& [name, x, z] : {std::tuple{"upstream", firstPlaneX, firstPlaneZ - gap},
+                                     std::tuple{"downstream", lastPlaneX, lastPlaneZ + gap}}) {
+      const std::string guardName = det_name + "_guard_" + name;
+      // Half disc on the side away from the electron beam pipe
+      Volume guardVol(guardName, Tube(rmin, rmax, 0.5 * dd4hep::um, 0.5 * M_PI, 1.5 * M_PI),
+                      description.vacuum());
+      guardVol.setVisAttributes(description.invisible());
+      PlacedVolume guardPV = assembly.placeVolume(guardVol, Position(x, 0, z));
+      // IDs above the layer IDs used by the sensor planes
+      DetElement guardDE(sdet, guardName + "_P", 100 + guardID++);
+      guardDE.setPlacement(guardPV);
+      DD4hepDetectorHelper::ensureExtension<dd4hep::rec::VariantParameters>(guardDE);
+    }
   }
 
   PlacedVolume pv = motherVol.placeVolume(assembly, posAndRot);
