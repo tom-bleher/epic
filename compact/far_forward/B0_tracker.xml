@@ -59,6 +59,15 @@
       <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
       <position x="B0TrackerCenter_xpos" y="0" z="B0TrackerCenter_zpos"/>
       <rotation x="0*rad" y="B0Tracker_rotation" z="0*rad"/>
+      <comment>
+        Empty ACTS layers `gap` upstream of the first and downstream of the last sensor plane,
+        as the ForwardTOF gap layers. The planes are tilted by the crossing angle and reach
+        further in global z than their ACTS layers; the guard layers widen the B0 tracking
+        volume to cover them. ACTS builds these layers from rmin and rmax only, so keep both
+        inside the radial range of the sensor layers. The thin vacuum half discs are what
+        Geant4 sees; the half away from the electron beam pipe keeps them clear of it.
+      </comment>
+      <acts_guard gap="6*mm" rmin="40*mm" rmax="130*mm"/>
       <!-- Shared tracking unit and CAD support plate definitions, used by every layer -->
       <module name="TrackingUnit" vis="FFTrackerModuleVis" offset_from_support="B0TrackerModuleOffsetFromSupport">
         <module_component name="PCB" material="Fr4" vis="FFTrackerSupportVis">
@@ -385,7 +394,7 @@
   <plugins>
     <plugin name="DD4hep_ParametersPlugin">
       <argument value="B0Tracker"/>
-      <argument value="layer_pattern: str=B0Tracker_layer\d+_(front|back)_P"/>
+      <argument value="layer_pattern: str=B0Tracker_(layer\d+_(front|back)|guard_\w+)_P"/>
     </plugin>
   </plugins>
 </lccdd>
