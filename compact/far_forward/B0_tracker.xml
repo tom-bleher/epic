@@ -11,19 +11,20 @@
       sensor modules on both faces of a support plate.
       - Support plate outlines and module (x, y) positions follow the B0 rail
         concept CAD model (B0_Rail Concept_May 2026.STEP).
-      - Station z positions come from a placement scan with this material.
-        B0TrackerCenter_zpos is the position of station 1, and the other
+      - The assembly follows the ion axis. Station z positions come from a
+        placement scan with this material and the hit-seeded B0 tracking.
+        B0TrackerCenter_xpos/zpos is the position of station 1, and the other
         stations are placed relative to it.
       - The CAD model carries no materials; the stack thicknesses below are
         the assumed module and support design.
     </comment>
-    <constant name="B0TrackerCenter_zpos" value="6099.75*mm"/>
-    <constant name="B0TrackerCenter_xpos" value="-0.16000052*m"/>
+    <constant name="B0TrackerCenter_zpos" value="5849.75*mm"/>
+    <constant name="B0TrackerCenter_xpos" value="-153.749*mm"/>
     <constant name="B0Tracker_rotation" value="ionCrossingAngle"/>
     <constant name="B0TrackerLayer1_zstart" value="0*mm"/>
-    <constant name="B0TrackerLayer2_zstart" value="276.086*mm"/>
-    <constant name="B0TrackerLayer3_zstart" value="525.164*mm"/>
-    <constant name="B0TrackerLayer4_zstart" value="750.234*mm"/>
+    <constant name="B0TrackerLayer2_zstart" value="422.332*mm"/>
+    <constant name="B0TrackerLayer3_zstart" value="751.235*mm"/>
+    <constant name="B0TrackerLayer4_zstart" value="1030.322*mm"/>
     <constant name="B0TrackerLayerXOffset" value="10*mm"/>
     <constant name="B0TrackerPCBThickness" value="1.0*mm"/>
     <constant name="B0TrackerPCBAlThickness" value="0.5*mm"/>
