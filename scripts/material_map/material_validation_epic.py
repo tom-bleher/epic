@@ -50,6 +50,19 @@ if "__main__" == __name__:
         default=1000,
         help="number of tracks per event")
 
+    p.add_argument(
+        "--eta_min",
+        type=float,
+        default=-8.0,
+        help="eta min (optional)",
+    )
+    p.add_argument(
+        "--eta_max",
+        type=float,
+        default=8.0,
+        help="eta max (optional)",
+    )
+
     args = p.parse_args()
 
     # Resolve material file if base name provided
@@ -75,6 +88,9 @@ if "__main__" == __name__:
         surfaces=materialSurfaces,
         s=s,
         tracksPerEvent=args.ntracks,
+        # EtaConfig(min, max, uniform): uniform in eta like the geantino scan, so the
+        # forward region gets as many tracks as it does there
+        etaRange=(args.eta_min, args.eta_max, True),
         outputFileBase=os.path.join(os.getcwd(), args.outputName),
         trackingGeometry=trackingGeometry,
     ).run()

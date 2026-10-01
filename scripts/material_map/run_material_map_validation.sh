@@ -10,6 +10,9 @@ if [[ -z ${DETECTOR_PATH} ]] ; then
   exit -1
 fi
 
+# |eta| range of the geantino scan, its validation and the eta plots; the B0 tracker sits at eta 4.3-5.9
+ETA_MAX=8
+
 # Download required Acts files
 ACTS_VERSION="v46.8.1"
 ACTS_URL="https://github.com/acts-project/acts/raw/"
@@ -50,6 +53,8 @@ diff -aru a/Examples/Scripts/MaterialMapping/Mat_map.C b/Examples/Scripts/Materi
      eta_0->Draw("Same");
      eta_1p->Draw("Same");
 EOF
+      # eta axes over the full scan range, so the forward region is not in the overflow
+      sed -i -E '/_Eta|"(Val|geantino|comp)_X0"/ s/160,-4,4/'$((40 * ETA_MAX))',-'${ETA_MAX}','${ETA_MAX}'/' ${file}
     fi
   fi
 done
@@ -152,7 +157,7 @@ propFile="${prefix}propagation_material${suffix}"
 echo "::group::----GEANTINO SCAN------"
 # output geant4_material_tracks.root
 # The result of the geantino scan will be a root file containing material tracks. Those contain the direction and production vertex of the geantino, the total material accumulated and all the interaction points in the detector.
-python material_recording_epic.py -i ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml -n ${nevents} -t ${nparticles} -o ${recordingFile}
+python material_recording_epic.py -i ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml -n ${nevents} -t ${nparticles} -o ${recordingFile} --eta_min -${ETA_MAX} --eta_max ${ETA_MAX}
 echo "::endgroup::"
 
 echo "::group::-----MAPPING Configuration-----"
@@ -206,8 +211,8 @@ echo "::group::----Prepare validation rootfile--------"
 # output propagation-material.root
 # Use the generated material map (Acts appends _map to the base name during generation,
 # so we need to use matFileBase_map for validation)
-python material_validation_epic.py --xmlFile ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml --outputName ${propFile}_regenerated --matFileBase ${matFileBase}_map -n ${nevents}  -t ${nparticles}
-python material_validation_epic.py --xmlFile ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml --outputName ${propFile}_current --matFileBase calibrations/materials-map -n ${nevents} -t ${nparticles}
+python material_validation_epic.py --xmlFile ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml --outputName ${propFile}_regenerated --matFileBase ${matFileBase}_map -n ${nevents}  -t ${nparticles} --eta_min -${ETA_MAX} --eta_max ${ETA_MAX}
+python material_validation_epic.py --xmlFile ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml --outputName ${propFile}_current --matFileBase calibrations/materials-map -n ${nevents} -t ${nparticles} --eta_min -${ETA_MAX} --eta_max ${ETA_MAX}
 echo "::endgroup::"
 
 echo "::group::-------Comparison plots---------"
