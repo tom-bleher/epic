@@ -198,8 +198,7 @@ if [[ "$verbose" -eq 1 ]]; then
 fi
 
 echo "::group::----MAPPING------------"
-matFormatArgs=$(echo ${matFileFormats} | sed 's/\([^ ]*\)/--matFileFormat \1/g')
-python material_mapping_epic.py --xmlFile ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml --geoFile ${geoFile} --matFileBase ${matFileBase} --inputRootFile ${recordingFile} ${matFormatArgs}
+python material_mapping_epic.py --xmlFile ${DETECTOR_PATH}/${DETECTOR_CONFIG}.xml --geoFile ${geoFile} --matFileBase ${matFileBase} --inputRootFile ${recordingFile} --matFileFormat ${matFileFormats}
 echo "::endgroup::"
 
 echo "::group::----Prepare validation rootfile--------"
