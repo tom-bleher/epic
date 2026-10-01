@@ -56,7 +56,7 @@
       <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
       <position x="0*cm" y="0*cm" z="-4*um"/>
     </detector>
-    <detector id="B0Tracker_Station_1_ID" name="B0Tracker" type="ip6_B0Tracker" readout="B0TrackerHits" vis="FFTrackerVis">
+    <detector id="B0Tracker_ID" name="B0Tracker" type="ip6_B0Tracker" readout="B0TrackerHits" vis="FFTrackerVis">
       <type_flags type="DetType_TRACKER + DetType_ENDCAP"/>
       <position x="B0Tracker_xpos" y="0" z="B0Tracker_zpos"/>
       <rotation x="0*rad" y="B0Tracker_rotation" z="0*rad"/>
