@@ -15,7 +15,7 @@
  *     <module x y [rotZ]> placements
  *   - <station id>: <position>, <support ref>, and <layout ref>
  *   - optional <acts_guard gap rmin rmax>: empty ACTS layers outside the first
- *     and last faces
+ *     and last faces; gap must exceed the z reach of their tilted approach surfaces
  *
  * Hierarchy station -> face -> module -> sensor, with these invariants:
  *   - Each <face> of a station's layout is one ACTS disc layer, the back or
@@ -71,8 +71,9 @@ struct SupportPlates {
 // The shared TrackingUnit, placed at every module position
 struct TrackingUnit {
   Assembly assembly;
-  std::vector<PlacedVolume> sensors; // sensitive placements, sensor id = index + 1
-  std::vector<VolPlane> surfaces;    // ACTS measurement plane of each sensor
+  std::vector<PlacedVolume> sensors;   // sensitive placements, sensor id = index + 1
+  std::vector<VolPlane> surfaces;      // ACTS measurement plane of each sensor
+  std::vector<Position> sensorCorners; // xy corners of every sensor, in the unit frame
   double zMin = +std::numeric_limits<double>::infinity(); // z extent of the stack
   double zMax = -std::numeric_limits<double>::infinity();
 };
@@ -136,6 +137,12 @@ TrackingUnit buildTrackingUnit(Detector& description, SensitiveDetector sens,
       c_vol.setSensitiveDetector(sens);
       comp_pv.addPhysVolID("sensor", static_cast<int>(unit.sensors.size()) + 1);
       unit.sensors.push_back(comp_pv);
+      for (const double sx : {-0.5, 0.5}) {
+        for (const double sy : {-0.5, 0.5}) {
+          unit.sensorCorners.emplace_back(x_pos.x() + sx * x_box.x(), x_pos.y() + sy * x_box.y(),
+                                          x_pos.z());
+        }
+      }
       // Measurement plane; its inner and outer thicknesses span the whole stack
       unit.surfaces.emplace_back(c_vol, SurfaceType(SurfaceType::Sensitive), x_pos.z() - unit.zMin,
                                  unit.zMax - x_pos.z(), Vector3D(-1.0, 0.0, 0.0),
@@ -192,15 +199,29 @@ SupportPlates buildSupportPlates(Detector& description, const std::string& det_n
 // Empty ACTS layers `gap` outside the first and last faces, which widen the B0
 // tracking volume to the outer sensors of the faces tilted by the crossing angle.
 // ACTS takes only rmin and rmax of an empty TGeoTubeSeg layer and builds a full
-// disc; the half disc only shapes the Geant4 volume and the event display
+// disc; the half disc only shapes the Geant4 volume and the event display.
+// ACTS sizes the volume in z from the layer centres, ignoring the tilt, so each
+// guard must lie beyond the z reach of the approach surface of its face
+// (upstreamReach, downstreamReach), or that surface would leave the volume
 void addActsGuardLayers(Detector& description, DetElement sdet, Assembly assembly,
                         xml_comp_t x_guard, const Position& firstFacePos,
-                        const Position& lastFacePos) {
+                        const Position& lastFacePos, double upstreamReach, double downstreamReach) {
   const std::string det_name = sdet.name();
   if (!std::isfinite(firstFacePos.z())) {
     throw std::runtime_error(det_name + ": <acts_guard> needs at least one <face>");
   }
   const Position gap(0.0, 0.0, x_guard.attr<double>(_Unicode(gap)));
+  for (const auto& [name, reach] :
+       {std::pair{"upstream", upstreamReach}, std::pair{"downstream", downstreamReach}}) {
+    if (gap.z() <= reach) {
+      throw std::runtime_error(det_name + ": <acts_guard> gap " +
+                               std::to_string(gap.z() / dd4hep::mm) + " mm does not cover the " +
+                               std::to_string(reach / dd4hep::mm) + " mm z reach of the " + name +
+                               " approach surface; increase gap");
+    }
+    printout(DEBUG, det_name, "ACTS guard %s: gap %.3f mm, approach reach %.3f mm", name,
+             gap.z() / dd4hep::mm, reach / dd4hep::mm);
+  }
   const double rmin = x_guard.rmin();
   const double rmax = x_guard.rmax();
   int guardID       = kGuardIdOffset;
@@ -279,9 +300,12 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   }
   const std::string env_vis = getAttrOrDefault<std::string>(x_env, _Unicode(vis), "");
 
-  // First and last tracking faces, for the ACTS guard layers
+  // First and last tracking faces and the largest sensor radius of each, for the
+  // ACTS guard layers
   Position firstFacePos(0.0, 0.0, +std::numeric_limits<double>::infinity());
   Position lastFacePos(0.0, 0.0, -std::numeric_limits<double>::infinity());
+  double firstFaceRMax = 0.0;
+  double lastFaceRMax  = 0.0;
 
   for (xml_coll_t st(x_det, _Unicode(station)); st; ++st) {
     xml_comp_t x_station = st;
@@ -345,26 +369,27 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
       }
       PlacedVolume facePV = assembly.placeVolume(faceVol, facePos);
       facePV.addPhysVolID("layer", layerID);
-      if (facePos.z() < firstFacePos.z()) {
-        firstFacePos = facePos;
-      }
-      if (facePos.z() > lastFacePos.z()) {
-        lastFacePos = facePos;
-      }
 
       DetElement faceDE(sdet, faceName + "_P", layerID);
       faceDE.setPlacement(facePV);
 
       // Place the shared TrackingUnit at each <module>; back modules are
       // flipped about x so their lowest-z side also sits on the support
-      int moduleID = 1;
+      int moduleID    = 1;
+      double faceRMax = 0.0;
       for (xml_coll_t mp(x_face, _U(module)); mp; ++mp, ++moduleID) {
         xml_comp_t xm = mp;
         RotationZYX modRot(getAttrOrDefault<double>(xm, _Unicode(rotZ), 0.0), 0.0,
                            isFront ? 0.0 : M_PI);
-        PlacedVolume mod_pv =
-            faceVol.placeVolume(unit.assembly, Transform3D(modRot, Position(xm.x(), xm.y(), 0.0)));
+        const Position modPos(xm.x(), xm.y(), 0.0);
+        PlacedVolume mod_pv = faceVol.placeVolume(unit.assembly, Transform3D(modRot, modPos));
         mod_pv.addPhysVolID("module", moduleID);
+        // Radius from the detector axis; Position is a displacement vector, so
+        // the module translation is added explicitly
+        for (const auto& corner : unit.sensorCorners) {
+          const Position c = modRot * corner + modPos;
+          faceRMax = std::max(faceRMax, std::hypot(facePos.x() + c.x(), facePos.y() + c.y()));
+        }
 
         DetElement modDE(faceDE, _toString(moduleID, "module%d"), moduleID);
         modDE.setPlacement(mod_pv);
@@ -393,13 +418,29 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
                                                         "layer_material");
       }
 
+      if (facePos.z() < firstFacePos.z()) {
+        firstFacePos  = facePos;
+        firstFaceRMax = faceRMax;
+      }
+      if (facePos.z() > lastFacePos.z()) {
+        lastFacePos  = facePos;
+        lastFaceRMax = faceRMax;
+      }
+
       printout(DEBUG, det_name, "Layer %d (station %d %s) z=%8.3f mm", layerID, station,
                side.c_str(), facePos.z() / dd4hep::mm);
     }
   }
 
   if (xml_comp_t x_guard = x_det.child(_Unicode(acts_guard), false); x_guard.ptr()) {
-    addActsGuardLayers(description, sdet, assembly, x_guard, firstFacePos, lastFacePos);
+    // Upper bound on the z reach of the approach surfaces of the first and last
+    // faces: the stack extent from the face origin plus the envelope, and the outer
+    // sensor radius tilted by the placement
+    const double sinTilt   = (posAndRot.Rotation() * Position(0.0, 0.0, 1.0)).Rho();
+    const double halfThick = std::max(std::abs(unit.zMin), std::abs(unit.zMax));
+    addActsGuardLayers(description, sdet, assembly, x_guard, firstFacePos, lastFacePos,
+                       halfThick + env_zmin_tol + firstFaceRMax * sinTilt,
+                       halfThick + env_zmax_tol + lastFaceRMax * sinTilt);
   }
 
   PlacedVolume pv = motherVol.placeVolume(assembly, posAndRot);
