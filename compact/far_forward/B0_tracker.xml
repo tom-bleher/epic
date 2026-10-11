@@ -63,7 +63,7 @@
         <layer_material surface="representing" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
       </acts_guard>
       <!-- ACTS layer settings, shared by every face -->
-      <envelope vis="FFTrackerLayerVis" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
+      <envelope vis="FFTrackerLayerVis" rmin_tolerance="0*mm" rmax_tolerance="0*mm" zmin_tolerance="1*mm" zmax_tolerance="1*mm"/>
       <layer_material surface="inner" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
       <layer_material surface="outer" binning="binPhi,binR" bins0="B0TrackerLayerMaterialPhiBins" bins1="B0TrackerLayerMaterialRBins"/>
       <!-- Shared tracking unit, used by every face. Its frame is centered on its sensors, and
