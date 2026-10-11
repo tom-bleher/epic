@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-// Copyright (C) 2026 Tom Bleher, Igor Korover
+// Copyright (C) 2022 - 2026 Tom Bleher, Igor Korover, Whitney Armstrong
 
 /*! B0 Tracker.
  *
- * @author Tom Bleher, Igor Korover
+ * @author Tom Bleher, Igor Korover, Whitney Armstrong
  * Compact elements read under <detector>:
  *   - <module name="TrackingUnit">: <module_component> boxes (<box>, <position>,
  *     material, sensitive) forming one double-sided sensor stave
