@@ -24,6 +24,7 @@
  *     is monotonic in z and separates front from back
  *   - Module ids restart at 1 per face, so cellIDs do not depend on the
  *     order of <station> blocks in the compact file
+ *   - Layer, module and sensor ids are checked against the readout fields
  *   - TrackingUnit Assembly is built once and reused via placeVolume for
  *     every (face, module position)
  *
@@ -31,7 +32,9 @@
  */
 
 #include "DD4hep/DetFactoryHelper.h"
+#include "DD4hep/IDDescriptor.h"
 #include "DD4hep/Printout.h"
+#include "DD4hep/Readout.h"
 #include "DD4hep/Shapes.h"
 #include "DD4hepDetectorHelper.h"
 #include "DDRec/DetectorData.h"
@@ -73,6 +76,21 @@ struct TrackingUnit {
   double zMin = +std::numeric_limits<double>::infinity(); // z extent of the stack
   double zMax = -std::numeric_limits<double>::infinity();
 };
+
+// Throw if a volume id does not fit its readout field; DD4hep would otherwise
+// wrap it silently into the cellID. The limits come from the field width, as
+// BitFieldElement::maxValue() is one too high for unsigned fields (DD4hep 1.38)
+void checkReadoutField(const std::string& det_name, SensitiveDetector sens,
+                       const std::string& field, int value) {
+  const auto* element = sens.readout().idSpec().field(field);
+  const int maxValue  = element->isSigned() ? element->maxValue() : (1 << element->width()) - 1;
+  if (value < element->minValue() || value > maxValue) {
+    throw std::runtime_error(det_name + ": " + field + " id " + std::to_string(value) +
+                             " does not fit the readout field (" +
+                             std::to_string(element->minValue()) + ".." + std::to_string(maxValue) +
+                             ")");
+  }
+}
 
 // The <tag name="..."> element under <detector>, or an invalid handle
 xml_h findNamed(xml_det_t x_det, const xml::Strng_t& tag, const std::string& name) {
@@ -124,6 +142,7 @@ TrackingUnit buildTrackingUnit(Detector& description, SensitiveDetector sens,
                                  Vector3D(0.0, -1.0, 0.0), Vector3D(0.0, 0.0, 1.0));
     }
   }
+  checkReadoutField(det_name, sens, "sensor", static_cast<int>(unit.sensors.size()));
   return unit;
 }
 
@@ -253,6 +272,11 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
   const double env_rmax_tol = getAttrOrDefault<double>(x_env, _Unicode(rmax_tolerance), 0.0);
   const double env_zmin_tol = getAttrOrDefault<double>(x_env, _Unicode(zmin_tolerance), 0.0);
   const double env_zmax_tol = getAttrOrDefault<double>(x_env, _Unicode(zmax_tolerance), 0.0);
+  if (env_zmin_tol <= 0.0 || env_zmax_tol <= 0.0) {
+    printout(WARNING, det_name,
+             "Non-positive envelope z tolerance; the ACTS approach surfaces will collapse onto "
+             "the layer surfaces");
+  }
   const std::string env_vis = getAttrOrDefault<std::string>(x_env, _Unicode(vis), "");
 
   // First and last tracking faces, for the ACTS guard layers
@@ -304,6 +328,9 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
 
       // cellID layer field, monotonic in z and separating front from back
       const int layerID = 2 * (station - 1) + (isFront ? 2 : 1);
+      checkReadoutField(det_name, sens, "layer", layerID);
+      checkReadoutField(det_name, sens, "module",
+                        static_cast<int>(xml_coll_t(x_face, _U(module)).size()));
 
       // Face origin at the TrackingUnit center, midway between its sensor planes:
       // ACTS centres the disc layer on this origin with the full thickness of its
