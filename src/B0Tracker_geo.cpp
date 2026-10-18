@@ -164,7 +164,9 @@ static Ref_t create_B0Tracker(Detector& description, xml_h e, SensitiveDetector 
     DD4hepDetectorHelper::xmlToProtoSurfaceMaterial(bmat, det_params, "boundary_material");
   }
 
-  assembly.setAttributes(description, x_det.regionStr(), x_det.limitsStr(), x_det.visStr());
+  // The top-level assembly is only a container, as on main; the parts carry the vis
+  assembly.setAttributes(description, x_det.regionStr(), x_det.limitsStr(),
+                         "InvisibleWithDaughters");
   sens.setType("tracker");
 
   const TrackingUnit unit =
