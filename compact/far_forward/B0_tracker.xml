@@ -111,21 +111,12 @@
       </support_stack>
       <!-- Plate outlines from the CAD model, with two changes: the beam hole and the straight
            edges of its slot follow B0TrackerHoleRadius, and the outer arc of plate 4 is widened
-           from R = 268 to 274 mm (about x = 140 mm) to leave room for its outermost column -->
-      <support_plate name="B0SupportPlate1">
-        <point x="0*mm" y="B0TrackerHoleRadius"/>
-        <point x="-B0TrackerHoleRadius*sin(15*deg)" y="B0TrackerHoleRadius*cos(15*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(30*deg)" y="B0TrackerHoleRadius*cos(30*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(45*deg)" y="B0TrackerHoleRadius*cos(45*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(60*deg)" y="B0TrackerHoleRadius*cos(60*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(75*deg)" y="B0TrackerHoleRadius*cos(75*deg)"/>
-        <point x="-B0TrackerHoleRadius" y="0*mm"/>
-        <point x="-B0TrackerHoleRadius*sin(105*deg)" y="B0TrackerHoleRadius*cos(105*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(120*deg)" y="B0TrackerHoleRadius*cos(120*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(135*deg)" y="B0TrackerHoleRadius*cos(135*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(150*deg)" y="B0TrackerHoleRadius*cos(150*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(165*deg)" y="B0TrackerHoleRadius*cos(165*deg)"/>
-        <point x="0*mm" y="-B0TrackerHoleRadius"/>
+           from R = 268 to 274 mm (about x = 140 mm) to leave room for its outermost column.
+           hole_radius generates the beam hole, a half circle on the -x side from (0, R) to
+           (0, -R) in 15 deg steps; the points continue the outline from (0, -R). The builder
+           stops if a stave reaches into the hole, so module positions that only touch it stay
+           consistent with B0TrackerPipeClearance -->
+      <support_plate name="B0SupportPlate1" hole_radius="B0TrackerHoleRadius">
         <point x="47.528*mm" y="-B0TrackerHoleRadius"/>
         <point x="53.033*mm" y="-48.024*mm"/>
         <point x="61.223*mm" y="-59.849*mm"/>
@@ -154,20 +145,7 @@
         <point x="53.033*mm" y="48.024*mm"/>
         <point x="47.528*mm" y="B0TrackerHoleRadius"/>
       </support_plate>
-      <support_plate name="B0SupportPlate2">
-        <point x="0*mm" y="B0TrackerHoleRadius"/>
-        <point x="-B0TrackerHoleRadius*sin(15*deg)" y="B0TrackerHoleRadius*cos(15*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(30*deg)" y="B0TrackerHoleRadius*cos(30*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(45*deg)" y="B0TrackerHoleRadius*cos(45*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(60*deg)" y="B0TrackerHoleRadius*cos(60*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(75*deg)" y="B0TrackerHoleRadius*cos(75*deg)"/>
-        <point x="-B0TrackerHoleRadius" y="0*mm"/>
-        <point x="-B0TrackerHoleRadius*sin(105*deg)" y="B0TrackerHoleRadius*cos(105*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(120*deg)" y="B0TrackerHoleRadius*cos(120*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(135*deg)" y="B0TrackerHoleRadius*cos(135*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(150*deg)" y="B0TrackerHoleRadius*cos(150*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(165*deg)" y="B0TrackerHoleRadius*cos(165*deg)"/>
-        <point x="0*mm" y="-B0TrackerHoleRadius"/>
+      <support_plate name="B0SupportPlate2" hole_radius="B0TrackerHoleRadius">
         <point x="47.216*mm" y="-B0TrackerHoleRadius"/>
         <point x="52.707*mm" y="-48.217*mm"/>
         <point x="60.917*mm" y="-60.223*mm"/>
@@ -196,20 +174,7 @@
         <point x="53.359*mm" y="47.832*mm"/>
         <point x="47.843*mm" y="B0TrackerHoleRadius"/>
       </support_plate>
-      <support_plate name="B0SupportPlate3">
-        <point x="0*mm" y="B0TrackerHoleRadius"/>
-        <point x="-B0TrackerHoleRadius*sin(15*deg)" y="B0TrackerHoleRadius*cos(15*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(30*deg)" y="B0TrackerHoleRadius*cos(30*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(45*deg)" y="B0TrackerHoleRadius*cos(45*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(60*deg)" y="B0TrackerHoleRadius*cos(60*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(75*deg)" y="B0TrackerHoleRadius*cos(75*deg)"/>
-        <point x="-B0TrackerHoleRadius" y="0*mm"/>
-        <point x="-B0TrackerHoleRadius*sin(105*deg)" y="B0TrackerHoleRadius*cos(105*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(120*deg)" y="B0TrackerHoleRadius*cos(120*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(135*deg)" y="B0TrackerHoleRadius*cos(135*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(150*deg)" y="B0TrackerHoleRadius*cos(150*deg)"/>
-        <point x="-B0TrackerHoleRadius*sin(165*deg)" y="B0TrackerHoleRadius*cos(165*deg)"/>
-        <point x="0*mm" y="-B0TrackerHoleRadius"/>
+      <support_plate name="B0SupportPlate3" hole_radius="B0TrackerHoleRadius">
         <point x="47.527*mm" y="-B0TrackerHoleRadius"/>
         <point x="53.032*mm" y="-48.024*mm"/>
         <point x="61.222*mm" y="-59.849*mm"/>
@@ -238,20 +203,7 @@
         <point x="53.032*mm" y="48.024*mm"/>
         <point x="47.527*mm" y="B0TrackerHoleRadius"/>
       </support_plate>
-      <support_plate name="B0SupportPlate4">
-        <point x="0*mm" y="B0TrackerHoleRadiusSt4"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(15*deg)" y="B0TrackerHoleRadiusSt4*cos(15*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(30*deg)" y="B0TrackerHoleRadiusSt4*cos(30*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(45*deg)" y="B0TrackerHoleRadiusSt4*cos(45*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(60*deg)" y="B0TrackerHoleRadiusSt4*cos(60*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(75*deg)" y="B0TrackerHoleRadiusSt4*cos(75*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4" y="0*mm"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(105*deg)" y="B0TrackerHoleRadiusSt4*cos(105*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(120*deg)" y="B0TrackerHoleRadiusSt4*cos(120*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(135*deg)" y="B0TrackerHoleRadiusSt4*cos(135*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(150*deg)" y="B0TrackerHoleRadiusSt4*cos(150*deg)"/>
-        <point x="-B0TrackerHoleRadiusSt4*sin(165*deg)" y="B0TrackerHoleRadiusSt4*cos(165*deg)"/>
-        <point x="0*mm" y="-B0TrackerHoleRadiusSt4"/>
+      <support_plate name="B0SupportPlate4" hole_radius="B0TrackerHoleRadiusSt4">
         <point x="50.507*mm" y="-B0TrackerHoleRadiusSt4"/>
         <point x="57.797*mm" y="-55.361*mm"/>
         <point x="68.368*mm" y="-67.715*mm"/>
@@ -281,52 +233,61 @@
       <!-- Each <face> is one ACTS layer: "front" faces the IP (upstream, odd layer id), "back"
            is downstream (even). Columns alternate between the faces every 15 mm, so the
            sensors of neighboring columns overlap by 1 mm; staves stacked in a column meet
-           sensor to sensor. Module ids follow the <module> order, so reordering changes the
-           cellIDs -->
+           sensor to sensor. Module ids follow the <module> order, with <modules ref> expanded in
+           place, so reordering changes the cellIDs. Columns shared by several stations are
+           written once in a <module_group> -->
+      <!-- Front-face columns x = -109.45 to 10.55 mm, shared by stations 1 to 3 -->
+      <module_group name="B0Modules_St123_front">
+        <module x="-109.450*mm" y="0.000*mm"/>
+        <module x="-79.450*mm" y="69.000*mm"/>
+        <module x="-79.450*mm" y="23.000*mm"/>
+        <module x="-79.450*mm" y="-23.000*mm"/>
+        <module x="-79.450*mm" y="-69.000*mm"/>
+        <module x="-49.450*mm" y="69.000*mm"/>
+        <module x="-49.450*mm" y="23.000*mm"/>
+        <module x="-49.450*mm" y="-23.000*mm"/>
+        <module x="-49.450*mm" y="-69.000*mm"/>
+        <module x="-19.450*mm" y="105.125*mm"/>
+        <module x="-19.450*mm" y="59.125*mm"/>
+        <module x="-19.450*mm" y="-59.125*mm"/>
+        <module x="-19.450*mm" y="-105.125*mm"/>
+        <module x="10.550*mm" y="105.750*mm"/>
+        <module x="10.550*mm" y="59.750*mm"/>
+        <module x="10.550*mm" y="-59.750*mm"/>
+        <module x="10.550*mm" y="-105.750*mm"/>
+      </module_group>
+      <!-- Back-face columns x = -94.45 to 25.55 mm, shared by stations 1 to 3 -->
+      <module_group name="B0Modules_St123_back">
+        <module x="-94.450*mm" y="46.000*mm"/>
+        <module x="-94.450*mm" y="0.000*mm"/>
+        <module x="-94.450*mm" y="-46.000*mm"/>
+        <module x="-64.450*mm" y="69.000*mm"/>
+        <module x="-64.450*mm" y="23.000*mm"/>
+        <module x="-64.450*mm" y="-23.000*mm"/>
+        <module x="-64.450*mm" y="-69.000*mm"/>
+        <module x="-34.450*mm" y="98.623*mm"/>
+        <module x="-34.450*mm" y="52.623*mm"/>
+        <module x="-34.450*mm" y="-52.623*mm"/>
+        <module x="-34.450*mm" y="-98.623*mm"/>
+        <module x="-4.450*mm" y="105.750*mm"/>
+        <module x="-4.450*mm" y="59.750*mm"/>
+        <module x="-4.450*mm" y="-59.750*mm"/>
+        <module x="-4.450*mm" y="-105.750*mm"/>
+        <module x="25.550*mm" y="105.750*mm"/>
+        <module x="25.550*mm" y="59.750*mm"/>
+        <module x="25.550*mm" y="-59.750*mm"/>
+        <module x="25.550*mm" y="-105.750*mm"/>
+      </module_group>
       <module_layout name="B0ModuleLayout_St1">
         <face side="front">
-          <module x="-109.450*mm" y="0.000*mm"/>
-          <module x="-79.450*mm" y="69.000*mm"/>
-          <module x="-79.450*mm" y="23.000*mm"/>
-          <module x="-79.450*mm" y="-23.000*mm"/>
-          <module x="-79.450*mm" y="-69.000*mm"/>
-          <module x="-49.450*mm" y="69.000*mm"/>
-          <module x="-49.450*mm" y="23.000*mm"/>
-          <module x="-49.450*mm" y="-23.000*mm"/>
-          <module x="-49.450*mm" y="-69.000*mm"/>
-          <module x="-19.450*mm" y="105.125*mm"/>
-          <module x="-19.450*mm" y="59.125*mm"/>
-          <module x="-19.450*mm" y="-59.125*mm"/>
-          <module x="-19.450*mm" y="-105.125*mm"/>
-          <module x="10.550*mm" y="105.750*mm"/>
-          <module x="10.550*mm" y="59.750*mm"/>
-          <module x="10.550*mm" y="-59.750*mm"/>
-          <module x="10.550*mm" y="-105.750*mm"/>
+          <modules ref="B0Modules_St123_front"/>
           <module x="40.550*mm" y="117.338*mm"/>
           <module x="40.550*mm" y="71.338*mm"/>
           <module x="40.550*mm" y="-71.338*mm"/>
           <module x="40.550*mm" y="-117.338*mm"/>
         </face>
         <face side="back">
-          <module x="-94.450*mm" y="46.000*mm"/>
-          <module x="-94.450*mm" y="0.000*mm"/>
-          <module x="-94.450*mm" y="-46.000*mm"/>
-          <module x="-64.450*mm" y="69.000*mm"/>
-          <module x="-64.450*mm" y="23.000*mm"/>
-          <module x="-64.450*mm" y="-23.000*mm"/>
-          <module x="-64.450*mm" y="-69.000*mm"/>
-          <module x="-34.450*mm" y="98.623*mm"/>
-          <module x="-34.450*mm" y="52.623*mm"/>
-          <module x="-34.450*mm" y="-52.623*mm"/>
-          <module x="-34.450*mm" y="-98.623*mm"/>
-          <module x="-4.450*mm" y="105.750*mm"/>
-          <module x="-4.450*mm" y="59.750*mm"/>
-          <module x="-4.450*mm" y="-59.750*mm"/>
-          <module x="-4.450*mm" y="-105.750*mm"/>
-          <module x="25.550*mm" y="105.750*mm"/>
-          <module x="25.550*mm" y="59.750*mm"/>
-          <module x="25.550*mm" y="-59.750*mm"/>
-          <module x="25.550*mm" y="-105.750*mm"/>
+          <modules ref="B0Modules_St123_back"/>
           <module x="55.550*mm" y="136.283*mm"/>
           <module x="55.550*mm" y="90.283*mm"/>
           <module x="55.550*mm" y="-90.283*mm"/>
@@ -335,48 +296,14 @@
       </module_layout>
       <module_layout name="B0ModuleLayout_St2">
         <face side="front">
-          <module x="-109.450*mm" y="0.000*mm"/>
-          <module x="-79.450*mm" y="69.000*mm"/>
-          <module x="-79.450*mm" y="23.000*mm"/>
-          <module x="-79.450*mm" y="-23.000*mm"/>
-          <module x="-79.450*mm" y="-69.000*mm"/>
-          <module x="-49.450*mm" y="69.000*mm"/>
-          <module x="-49.450*mm" y="23.000*mm"/>
-          <module x="-49.450*mm" y="-23.000*mm"/>
-          <module x="-49.450*mm" y="-69.000*mm"/>
-          <module x="-19.450*mm" y="105.125*mm"/>
-          <module x="-19.450*mm" y="59.125*mm"/>
-          <module x="-19.450*mm" y="-59.125*mm"/>
-          <module x="-19.450*mm" y="-105.125*mm"/>
-          <module x="10.550*mm" y="105.750*mm"/>
-          <module x="10.550*mm" y="59.750*mm"/>
-          <module x="10.550*mm" y="-59.750*mm"/>
-          <module x="10.550*mm" y="-105.750*mm"/>
+          <modules ref="B0Modules_St123_front"/>
           <module x="40.550*mm" y="116.614*mm"/>
           <module x="40.550*mm" y="70.614*mm"/>
           <module x="40.550*mm" y="-70.614*mm"/>
           <module x="40.550*mm" y="-116.614*mm"/>
         </face>
         <face side="back">
-          <module x="-94.450*mm" y="46.000*mm"/>
-          <module x="-94.450*mm" y="0.000*mm"/>
-          <module x="-94.450*mm" y="-46.000*mm"/>
-          <module x="-64.450*mm" y="69.000*mm"/>
-          <module x="-64.450*mm" y="23.000*mm"/>
-          <module x="-64.450*mm" y="-23.000*mm"/>
-          <module x="-64.450*mm" y="-69.000*mm"/>
-          <module x="-34.450*mm" y="98.623*mm"/>
-          <module x="-34.450*mm" y="52.623*mm"/>
-          <module x="-34.450*mm" y="-52.623*mm"/>
-          <module x="-34.450*mm" y="-98.623*mm"/>
-          <module x="-4.450*mm" y="105.750*mm"/>
-          <module x="-4.450*mm" y="59.750*mm"/>
-          <module x="-4.450*mm" y="-59.750*mm"/>
-          <module x="-4.450*mm" y="-105.750*mm"/>
-          <module x="25.550*mm" y="105.750*mm"/>
-          <module x="25.550*mm" y="59.750*mm"/>
-          <module x="25.550*mm" y="-59.750*mm"/>
-          <module x="25.550*mm" y="-105.750*mm"/>
+          <modules ref="B0Modules_St123_back"/>
           <module x="55.550*mm" y="135.527*mm"/>
           <module x="55.550*mm" y="89.527*mm"/>
           <module x="55.550*mm" y="-89.527*mm"/>
@@ -385,48 +312,14 @@
       </module_layout>
       <module_layout name="B0ModuleLayout_St3">
         <face side="front">
-          <module x="-109.450*mm" y="0.000*mm"/>
-          <module x="-79.450*mm" y="69.000*mm"/>
-          <module x="-79.450*mm" y="23.000*mm"/>
-          <module x="-79.450*mm" y="-23.000*mm"/>
-          <module x="-79.450*mm" y="-69.000*mm"/>
-          <module x="-49.450*mm" y="69.000*mm"/>
-          <module x="-49.450*mm" y="23.000*mm"/>
-          <module x="-49.450*mm" y="-23.000*mm"/>
-          <module x="-49.450*mm" y="-69.000*mm"/>
-          <module x="-19.450*mm" y="105.125*mm"/>
-          <module x="-19.450*mm" y="59.125*mm"/>
-          <module x="-19.450*mm" y="-59.125*mm"/>
-          <module x="-19.450*mm" y="-105.125*mm"/>
-          <module x="10.550*mm" y="105.750*mm"/>
-          <module x="10.550*mm" y="59.750*mm"/>
-          <module x="10.550*mm" y="-59.750*mm"/>
-          <module x="10.550*mm" y="-105.750*mm"/>
+          <modules ref="B0Modules_St123_front"/>
           <module x="40.550*mm" y="105.750*mm"/>
           <module x="40.550*mm" y="59.750*mm"/>
           <module x="40.550*mm" y="-59.750*mm"/>
           <module x="40.550*mm" y="-105.750*mm"/>
         </face>
         <face side="back">
-          <module x="-94.450*mm" y="46.000*mm"/>
-          <module x="-94.450*mm" y="0.000*mm"/>
-          <module x="-94.450*mm" y="-46.000*mm"/>
-          <module x="-64.450*mm" y="69.000*mm"/>
-          <module x="-64.450*mm" y="23.000*mm"/>
-          <module x="-64.450*mm" y="-23.000*mm"/>
-          <module x="-64.450*mm" y="-69.000*mm"/>
-          <module x="-34.450*mm" y="98.623*mm"/>
-          <module x="-34.450*mm" y="52.623*mm"/>
-          <module x="-34.450*mm" y="-52.623*mm"/>
-          <module x="-34.450*mm" y="-98.623*mm"/>
-          <module x="-4.450*mm" y="105.750*mm"/>
-          <module x="-4.450*mm" y="59.750*mm"/>
-          <module x="-4.450*mm" y="-59.750*mm"/>
-          <module x="-4.450*mm" y="-105.750*mm"/>
-          <module x="25.550*mm" y="105.750*mm"/>
-          <module x="25.550*mm" y="59.750*mm"/>
-          <module x="25.550*mm" y="-59.750*mm"/>
-          <module x="25.550*mm" y="-105.750*mm"/>
+          <modules ref="B0Modules_St123_back"/>
           <module x="55.550*mm" y="69.000*mm"/>
           <module x="55.550*mm" y="23.000*mm"/>
           <module x="55.550*mm" y="-23.000*mm"/>
