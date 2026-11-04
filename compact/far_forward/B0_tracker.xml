@@ -23,6 +23,7 @@
     <constant name="B0TrackerPCBLength" value="46.0*mm"/>
     <constant name="B0TrackerSensorWidth" value="16.0*mm"/>
     <constant name="B0TrackerSensorLength" value="16.0*mm"/>
+    <constant name="B0TrackerPadPitch" value="0.5*mm"/>
     <constant name="B0TrackerSensorOverlap" value="1.0*mm"/>
     <constant name="B0TrackerASICWidth" value="B0TrackerSensorWidth"/>
     <constant name="B0TrackerASICLength" value="B0TrackerSensorLength"/>
@@ -514,10 +515,11 @@
   <readouts>
     <readout name="B0TrackerHits">
       <comment>
-        Effective 70 um cells (~20 um resolution) stand in for charge sharing in the
-        500 um AC-LGAD pixels until a dedicated digitization exists
+        Physical 500 um AC-LGAD pads (32x32 per sensor), offset so pad edges coincide with the
+        sensor edges. Sub-pad resolution comes from charge sharing in EICrecon digitization
+        and clustering.
       </comment>
-      <segmentation type="CartesianGridXY" grid_size_x="0.070*mm" grid_size_y="0.070*mm"/>
+      <segmentation type="CartesianGridXY" grid_size_x="B0TrackerPadPitch" grid_size_y="B0TrackerPadPitch" offset_x="B0TrackerPadPitch/2" offset_y="B0TrackerPadPitch/2"/>
       <id>system:8,layer:4,module:12,sensor:2,x:32:-16,y:-16</id>
     </readout>
   </readouts>
